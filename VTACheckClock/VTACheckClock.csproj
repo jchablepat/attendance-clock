@@ -70,6 +70,7 @@
     <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.1.2" />
     <PackageReference Include="Avalonia.ReactiveUI" Version="11.1.2" />
     <PackageReference Include="Avalonia.Svg.Skia" Version="11.1.0" />
+    <PackageReference Include="ClosedXML" Version="0.104.2" />
     <!--<PackageReference Include="Avalonia.Themes.Fluent" Version="11.1.2" />-->
     <PackageReference Include="DPUruNet" Version="1.0.0.1" />
     <PackageReference Include="FluentAvaloniaUI" Version="2.1.0" />

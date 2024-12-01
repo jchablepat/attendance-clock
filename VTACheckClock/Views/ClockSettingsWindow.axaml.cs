@@ -59,7 +59,7 @@ namespace VTACheckClock.Views
             }
         }
 
-        private void OnTextInput(object? sender, KeyEventArgs e)
+        private static void OnTextInput(object? sender, KeyEventArgs e)
         {
             // Verificar si la tecla presionada es numérica
             if (!IsNumericKey(e.Key))
@@ -69,7 +69,7 @@ namespace VTACheckClock.Views
             }
         }
 
-        private bool IsNumericKey(Key key)
+        private static bool IsNumericKey(Key key)
         {
             // Verificar si la tecla presionada es numérica
             return key >= Key.D0 && key <= Key.D9 || key >= Key.NumPad0 && key <= Key.NumPad9;
@@ -79,7 +79,7 @@ namespace VTACheckClock.Views
         {
 
             // Get top level from the current control. Alternatively, you can use Window reference instead.
-            var topLevel = TopLevel.GetTopLevel(this);
+            var topLevel = GetTopLevel(this);
 
             // Start async operation to open the dialog.
             var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions {

@@ -1,7 +1,9 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -200,6 +202,31 @@ namespace VTACheckClock.DBAccess
 
             return await DBInterface.EjecutarComandoSelectAsync(comando);
         }
+
+        public static async Task<DataTable> GetAttendanceByDateRange(int office_id, DateTime startDate, DateTime endDate)
+        {
+            SqlCommand comando = DBInterface.CrearComando(2);
+            comando.CommandText = "[attendance].[GetAttendanceByDateRange]";
+            comando.Parameters.AddWithValue("@off_id", office_id);
+            comando.Parameters.AddWithValue("@Start_Date", startDate);
+            comando.Parameters.AddWithValue("@End_Date", endDate);
+
+            return await DBInterface.EjecutarComandoSelectAsync(comando);
+        }
+
+        public static async Task<DataTable> SaveAttendanceTime(int employeeId, int officeId, int eventId, DateTime dateTime)
+        {
+            var command = DBInterface.CrearComando(2);
+            command.CommandText = "[attendance].[SaveAttendanceTime]";
+
+            command.Parameters.AddWithValue("@employee_id", employeeId);
+            command.Parameters.AddWithValue("@office_id", officeId);
+            command.Parameters.AddWithValue("@event_id", eventId);
+            command.Parameters.AddWithValue("@dateTime", dateTime);
+
+            return await DBInterface.EjecutarComandoSelectAsync(command);
+        }
+
         #endregion
 
         #region Bitácoras

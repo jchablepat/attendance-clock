@@ -36,7 +36,7 @@ namespace VTACheckClock
                     DataContext = new ConfigurationViewModel(),
                 };
 
-                // .. and subscribe to its "Apply" button, which returns the dialog result
+                // and subscribe to its "Apply" button, which returns the dialog result
                 dialog.ViewModel!.ApplyCommand
                 .Subscribe(result => {
                    var mw = new MainWindow {

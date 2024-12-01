@@ -7,11 +7,11 @@ namespace VTACheckClock.Views
         public EventPromptWindow()
         {
             InitializeComponent();
-            this.Get<Button>("btnExit").Click += delegate {
+            btnExit.Click += delegate {
                 this.Close(2);
             };
 
-            this.Get<Button>("btnEnter").Click += delegate {
+            btnEnter.Click += delegate {
                 this.Close(1);
             };
         }

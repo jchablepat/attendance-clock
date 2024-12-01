@@ -512,7 +512,7 @@ namespace VTACheckClock.ViewModels
         #region Validaciones
 
         /// <summary>
-        /// Valida que los valores introducidos en los campos del formulario sean correctos.
+        /// Validar que los valores introducidos en los campos del formulario sean correctos.
         /// </summary>
         /// <returns>True si la información introducida en el formulario cumple todas las validaciones.</returns>
         private async Task<bool> SaveSettings()

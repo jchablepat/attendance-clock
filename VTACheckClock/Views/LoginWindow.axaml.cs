@@ -51,7 +51,9 @@ namespace VTACheckClock.Views
                 }
             })));
             this.WhenActivated(d => d(ViewModel!.ShowSettingsDialog.RegisterHandler(ShowSettingsDialogAsync)));
-            this.FindControl<TextBox>("txtUser").KeyUp += OnTextInput;
+            
+            txtUser.KeyUp += OnTextInput;
+
             Activated += (sender, e) => {
                 txtUser.Focus();
             };

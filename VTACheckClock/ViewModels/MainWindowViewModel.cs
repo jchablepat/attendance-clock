@@ -89,10 +89,12 @@ namespace VTACheckClock.ViewModels
         public ReactiveCommand<Unit, Unit>? PwdPunchCommand { get; }
         public Interaction<PwdPunchViewModel, int> ShowPwdPunchDialog { get; } = new();
         public Interaction<WebsocketLoggerViewModel, bool> ShowLoggerDialog { get; } = new();
+        public Interaction<AttendanceViewModel, bool> ShowAttendanceRptDialog { get; } = new();
         public Interaction<LoginViewModel, bool> ShowLoginDialog { get; } = new();
         public ICommand? LoginCommand { get; }
         public ICommand? LogOutCommand { get; }
         public ICommand? PreviewLoggerCommand { get; }
+        public ICommand? PreviewAttendanceReportCommand { get; }
         public ICommand? SyncEvtCommand { get; }
 
         public ICommand? TestCommand { get; }
@@ -238,9 +240,8 @@ namespace VTACheckClock.ViewModels
         /// </summary>
         public int Duration
         {
-            get { return _Duration; }
-            set
-            {
+            get => _Duration;
+            set {
                 this.RaiseAndSetIfChanged(ref _Duration, value);
                 SetupTransitions();
             }
@@ -326,8 +327,14 @@ namespace VTACheckClock.ViewModels
 
             PreviewLoggerCommand = ReactiveCommand.CreateFromTask(async () => {
                 var frmPassPunc = new WebsocketLoggerViewModel();
-                var result = await ShowLoggerDialog.Handle(frmPassPunc);
+                await ShowLoggerDialog.Handle(frmPassPunc);
             });
+
+            PreviewAttendanceReportCommand = ReactiveCommand.CreateFromTask(async () => {
+                var vmAtteRptViewModel = new AttendanceViewModel();
+                await ShowAttendanceRptDialog.Handle(vmAtteRptViewModel);
+            });
+
             //SyncEvtCommand = ReactiveCommand.CreateFromTask(InvokeManualSync(false));
             this.WhenAnyValue(x => x.ShowLoader).Where(y => y).Subscribe(InvokeManualSyncEvt!);
             this.WhenAnyValue(x => x.NewNotice).Where(y => y != null).Subscribe(AddNewNotice!);
@@ -625,9 +632,9 @@ namespace VTACheckClock.ViewModels
         private List<FMDItem>? fmd_collection;
         public int elid_idx = -1;
         public MainSettings? m_settings;
-        private readonly Logger log = LogManager.GetLogger("app_logger");
+        private static readonly Logger log = LogManager.GetLogger("app_logger");
         private static readonly string[] PunchSounds = { "", "Entry", "Exit", "Unknown", "Error" };
-        private WaveOutEvent? waveOutEvent;
+        private static WaveOutEvent? waveOutEvent;
         private bool ScheduleTriggered = false;
         private static DateTime LastSyncDate = DateTime.MinValue;
         private static bool RetryingSync = false;
@@ -734,7 +741,7 @@ namespace VTACheckClock.ViewModels
                     )
                 };
 
-                ScantResponse response = await CommonProcs.SyncWatchesAsync(scantreq);
+                await CommonProcs.SyncWatchesAsync(scantreq);
             } catch {
                 return;
             }
@@ -998,15 +1005,15 @@ namespace VTACheckClock.ViewModels
                     //Si el registro esta duplicado
                     if (next_ev == -1)
                     {
-                        PlayBeep(4);
+                        await PlayBeep(4);
                         await UpdateInfoLabels(2);
                         ToggleTimers(true); //Reanuda los temporizadores
 
                         return;
                     }
-                    EmpPunches.Clear(); //Limpia el historial de registros del ultimo colaborador
+                    EmpPunches.Clear(); //Limpia el historial de registros del último colaborador
 
-                    PlayBeep(next_ev);
+                    await PlayBeep(next_ev);
 
                     PunchLine new_punch = new() {
                         Punchemp = emp_finger.empid,
@@ -1020,7 +1027,6 @@ namespace VTACheckClock.ViewModels
                     foreach (DataRow dr in dt_punches.Rows)
                     {
                         DateTime dattim = CommonProcs.FromFileString(dr["PuncTime"].ToString());
-                        int.TryParse(dr["EvID"].ToString(), out int el_ev);
 
                         var data = new EmployeePunch() {
                             punchdate = CommonProcs.UpperFirst(dattim.ToString("dddd dd/MM/yyyy")),
@@ -1057,7 +1063,7 @@ namespace VTACheckClock.ViewModels
                     LastEmployeeEventItem = EmpPunches.Count - 1;
                 } else {
                     EmpPunches.Clear();
-                    PlayBeep(3);
+                    await PlayBeep(3);
                     await UpdateInfoLabels(3);
                 }
                 ToggleTimers(true); //Reanuda el temporizador esperando otro registro de asistencia.
@@ -1104,7 +1110,7 @@ namespace VTACheckClock.ViewModels
         /// Obtiene el historial de registros de asistencia del colaborador directamente de la BD.
         /// </summary>
         /// <returns></returns>
-        private async static Task<DataTable> OnlineEmpPunches(int emp_id)
+        private static async Task<DataTable> OnlineEmpPunches(int emp_id)
         {
             DataTable dt = VoidPunches;
 
@@ -1161,7 +1167,7 @@ namespace VTACheckClock.ViewModels
         private static async Task<int> ComputeNextEvent(PunchLine last_punch, DateTime new_punch)
         {
             TimeSpan ev_diff = new_punch.Subtract(last_punch.Punchtime);
-            //Valida si ya cumplio el tiempo estipulado para no considerarlo como duplicado
+            //Validar si ya cumplió el tiempo estipulado para no considerarlo como duplicado
             if (ev_diff.TotalSeconds < CommonProcs.ParamInt(3)) {
                 return -1;
             }
@@ -1170,12 +1176,13 @@ namespace VTACheckClock.ViewModels
                 switch (last_punch.Punchevent)
                 {
                     case 2: //Si es salida
-                        //Podria presentarse el caso de que marque "Entrada" cuando sea "Salida" debido a un fallo de sincronizacion de datos
+                        //Podría presentarse el caso de que marque "Entrada" cuando sea "Salida" debido a un fallo de sincronización de datos
                         //Normalmente la salida es a las 5:05, entonces validamos si la hora actual es mayor o igual a las 5.
                         int _evt = 1;
 
                         if (new_punch.Hour >= 17) {
                             _evt = -1;
+                            await PlayBeep(4);
 
                             var MainWindow = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
                             var windows = MainWindow?.OwnedWindows;
@@ -1191,7 +1198,7 @@ namespace VTACheckClock.ViewModels
 
                     case 1: //Si es entrada
                         TimeSpan max_shift = CommonProcs.ParamTSpan(12);
-                        //En caso que hayas registrado entrada pero no salida. Ya paso mas tiempo de lo permitido.
+                        //En caso de que hayas registrado entrada pero no salida. Ya paso más tiempo de lo permitido.
 
                         if (ev_diff > max_shift) {
                             int evt = -1;
@@ -1444,9 +1451,10 @@ namespace VTACheckClock.ViewModels
 
         private async Task SendEmployeesWithNoCheckInOut()
         {
-            var off_id = GlobalVars.this_office?.Offid ?? 0;
+            var offId = GlobalVars.this_office?.Offid ?? 0;
+            var offName = GlobalVars.this_office?.Offname ?? "";
 
-            DataTable dt = await DBMethods.GetEmployeesWithNoCheckInOut(off_id);
+            var dt = await DBMethods.GetEmployeesWithNoCheckInOut(offId);
             var body = EmailSenderHandler.BuildMessage(dt);
 
             if (dt.Rows.Count > 0 && dt.Columns.Contains("ERROR") && dt.Rows[0]["ERROR"].ToString() != "None") {
@@ -1458,7 +1466,7 @@ namespace VTACheckClock.ViewModels
             }
 
             await Task.Run(async () => {
-                await EmailSenderHandler.SendEmailAsync("Control de Asistencia " + GetRemoteDateTime().ToString("dd/MM/yyyy") , body);
+                await EmailSenderHandler.SendEmailAsync((string.IsNullOrEmpty(offName) ? offName + " - ": "") + "Control de Asistencia", body);
             });
         }
 
@@ -1506,7 +1514,7 @@ namespace VTACheckClock.ViewModels
         /// <summary>
         /// Evalúa si es hora de iniciar la sincronización automática, según los parámetros de configuración del sistema.
         /// </summary>
-        /// <returns>True si la hora actual coincide con la configurada en el párametro correspondiente.</returns>
+        /// <returns>True si la hora actual coincide con la configurada en el parámetro correspondiente.</returns>
         private bool CheckSyncDTime()
         {
             DateTime sync_sched = CommonProcs.ParamDTime(2);
@@ -1581,75 +1589,34 @@ namespace VTACheckClock.ViewModels
         /// <summary>
         /// Carga y reproduce el sonido indicado, de acuerdo al tipo de evento, como retroalimentación del registro de asistencia.
         /// </summary>
-        /// <param name="beep_type">Sonido que será reproducido.</param>
-        /// <param name="failsafe">Indica si debe omitir el intento de cargar el sonido desde un archivo externo para evitar errores.</param>
-        public void PlayBeep(int beep_type = 0, bool failsafe = false)
+        /// <param name="beepType">Sonido que será reproducido.</param>
+        public static async Task PlayBeep(int beepType = 0)
         {
-            //var assets = AvaloniaLocator.Current.GetService<Avalonia.Platform.IAssetLoader>();
-            //string? assemblyName = Assembly.GetExecutingAssembly().GetName().Name;
-
-            //var resourcesNames = Assembly.GetExecutingAssembly().GetManifestResourceNames(); // ["!AvaloniaResources"]
-            //var pathAvaresRessources = new Uri($"avares://{resourcesNames[0].Replace("!", "")}/Assets");
-            //var pathAvaresProject = new Uri($"avares://{assemblyName}/Assets");
-            //var averesRessources = assets.GetAssets(pathAvaresProject, null);
-
-            if ((beep_type < 0) || (beep_type >= PunchSounds.Length)) failsafe = true;
-
-            if (failsafe) {
-                //DEPRECATED: JUST FOR INFORMATION OF FIRST VERSION
-                try {
-                    Stream? str = null;
-
-                    switch (beep_type) {
-                        case 4:
-                           //str = Properties.Resources.PunchError;
-                           break;
-
-                        case 3:
-                           break;
-
-                        case 2:
-                           break;
-
-                        case 1:
-                           break;
-
-                        case 0:
-                           break;
-
-                        default:
-                           break;
-                    }
-
-                    // Crear una nueva instancia de WaveOutEvent y reproduce el archivo de audio
-                    waveOutEvent = new WaveOutEvent();
-                    waveOutEvent.Init(new WaveFileReader(str));
-                    waveOutEvent.Play();
-                } catch {
-                    StopSound();
-                    return;
-                }
-            } else {
-                string? beep_file = GlobalVars.AppWorkPath + "Assets\\Audio\\Punch" + PunchSounds[beep_type] + ".wav";
-
-                try {
+            try {
+                await Dispatcher.UIThread.InvokeAsync(() => {
                     StopSound();
 
-                    // Crear una nueva instancia de WaveOutEvent y reproducir el archivo de audio
+                    // Crear instancias de reproducción
+                    var beepFile = GlobalVars.AppWorkPath + @"Assets\\Audio\\Punch" + PunchSounds[beepType] + ".wav";
                     waveOutEvent = new WaveOutEvent();
-                    waveOutEvent.Init(new WaveFileReader(beep_file));
+                    waveOutEvent.Init(new WaveFileReader(beepFile));
                     waveOutEvent.Play();
-                } catch {
-                    PlayBeep(beep_type, true);
-                    return;
-                }
+
+                    // Manejar evento de finalización
+                    waveOutEvent.PlaybackStopped += (sender, e) => {
+                        StopSound();
+                    };
+                });
+            }
+            catch (Exception ex) {
+                log.Warn($"Error al reproducir sonido: {ex.Message}");
             }
         }
 
         /// <summary>
         /// Detener la reproducción actual si ya se está reproduciendo
         /// </summary>
-        private void StopSound()
+        private static void StopSound()
         {
             if (waveOutEvent != null) {
                 waveOutEvent.Stop();
@@ -1852,7 +1819,7 @@ namespace VTACheckClock.ViewModels
 
             switch (la_action)
             {
-                case 6: //Solo muestra informacion
+                case 6: //Solo muestra información
                     txtlblName = emp_num + " - " + emp_nom;
                     txtlblEvent = "Esperando huella...";
                     break;
@@ -2062,10 +2029,5 @@ namespace VTACheckClock.ViewModels
 
             return (Visual)(p1 ?? throw new InvalidOperationException("Cannot determine visual parent."));
         }
-    }
-
-    public class GetMemoryData
-    {
-
     }
 }

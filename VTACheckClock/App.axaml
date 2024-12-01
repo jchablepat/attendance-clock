@@ -3,6 +3,7 @@
              xmlns:local="using:VTACheckClock"
              x:Class="VTACheckClock.App"
              xmlns:sty="using:FluentAvalonia.Styling"
+             xmlns:converters="clr-namespace:VTACheckClock.Converters"
              RequestedThemeVariant="Light">
     <Application.DataTemplates>
         <local:ViewLocator/>
@@ -56,10 +57,10 @@
       <Style Selector="DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
         <Setter Property="Fill" Value="#6a9ced"/>
       </Style>
-      
-      <Style Selector="DataGridRow:selected TextBlock">
-        <Setter Property="Foreground" Value="White"/>
-        <Setter Property="Background" Value="Transparent"/>
+
+      <Style Selector="DataGridRow:selected DataGridCell > TextBlock">
+          <Setter Property="Foreground" Value="White"/>
+          <Setter Property="Background" Value="Transparent"/>
       </Style>
 
       <!-- Nuevo estilo para eliminar el borde de foco de celda -->
@@ -67,5 +68,114 @@
         <Setter Property="Stroke" Value="Red"/>
         <Setter Property="StrokeThickness" Value="0"/>
       </Style>
+
+      <Style Selector="Grid.loading-overlay">
+          <Setter Property="Background" Value="#40000000"/>
+          <Setter Property="HorizontalAlignment" Value="Stretch"/>
+          <Setter Property="VerticalAlignment" Value="Stretch"/>
+      </Style>
+      <Style Selector="ProgressBar.centered">
+          <Setter Property="HorizontalAlignment" Value="Center"/>
+          <Setter Property="VerticalAlignment" Value="Center"/>
+          <Setter Property="Width" Value="400"/>
+          <Setter Property="Height" Value="18"/>
+      </Style>
+
+      <!--Estilo para todas las celdas de encabezado-->
+      <Style Selector="DataGrid.dgAttendanceRpt DataGridColumnHeader">
+          <Setter Property="Background" Value="BurlyWood"/>
+          <Setter Property="Foreground" Value="White"/>
+          <Setter Property="FontWeight" Value="Bold"/>
+          <Setter Property="Padding" Value="5"/>
+          <Setter Property="HorizontalContentAlignment" Value="Center"/>
+          <Setter Property="VerticalAlignment" Value="Center"/>
+      </Style>
+
+      <!--Estilo específico para encabezados de fechas (si necesitas diferenciarlo)-->
+      <Style Selector="DataGrid.dgAttendanceRpt DataGridColumnHeader:nth-child(n+4)">
+        <Setter Property="Background" Value="#FF2196F3"/>
+      </Style>
+
+      <!--Estilo para el contenedor del encabezado cuando es fin de semana-->
+      <Style Selector="DataGrid.dgAttendanceRpt DataGridColumnHeader TextBlock.Weekend">
+        <Setter Property="Foreground" Value="#FFF44336"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+      </Style>
+
+      <!--Estilo específico para el día de la semana-->
+      <Style Selector="DataGrid.dgAttendanceRpt DataGridColumnHeader TextBlock:nth-child(2)">
+        <Setter Property="FontStyle" Value="Italic"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+      </Style>
+
+      <!--Estilo para todas las celdas (alineación central por defecto)-->
+      <Style Selector="DataGrid.dgAttendanceRpt DataGridCell">
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      </Style>
+
+      <!--Estilo específico para las celdas de la primera columna-->
+      <Style Selector="DataGrid.dgAttendanceRpt DataGridCell:nth-child(1), DataGridCell:nth-child(2)">
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+      </Style>
+
+      <!--Estilo para las celdas de fin de semana-->
+      <Style Selector="DataGrid.dgAttendanceRpt DataGridCell.Weekend">
+        <Setter Property="Background" Value="#FFF4F4F4"/>
+      </Style>
+
+      <!--Estilo base para el TimePicker-->
+      <Style Selector="DataGrid.dgAttendanceRpt TimePicker">
+        <Setter Property="Background" Value="#2196F3"/>
+        <Setter Property="Foreground" Value="Black"/>
+        <Setter Property="BorderBrush" Value="#2196F3"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Padding" Value="8,4"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+      </Style>
+
+      <!--Estilo para el Popup/Flyout del TimePicker-->
+      <Style Selector="DataGrid.dgAttendanceRpt TimePickerPresenter">
+        <Setter Property="Background" Value="#f9f9f9"/>
+        <Setter Property="Foreground" Value="Black"/>
+        <Setter Property="BorderBrush" Value="#f9f9f9"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Width" Value="250"/>
+
+        <!--Estilos para las partes internas del selector-->
+        <Style Selector="^ Button">
+          <Setter Property="Background" Value="OrangeRed"/>
+          <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <!--Estilo para los números seleccionables-->
+        <Style Selector="^ ListBoxItem">
+          <Setter Property="Foreground" Value="Black"/>
+          <Setter Property="Background" Value="#0067c0"/>
+        </Style>
+      </Style>
+
+      <!--Estilos para estados del TimePicker-->
+      <Style Selector="DataGrid.dgAttendanceRpt TimePicker:pointerover">
+        <Setter Property="BorderBrush" Value="#2196F3"/>
+      </Style>
+
+      <Style Selector="DataGrid.dgAttendanceRpt TimePicker:focus">
+        <Setter Property="BorderBrush" Value="#2196F3"/>
+        <Setter Property="Background" Value="#E3F2FD"/>
+      </Style>
+
+      <Style Selector="DataGrid.dgAttendanceRpt TimePicker:disabled">
+        <Setter Property="Opacity" Value="0.6"/>
+      </Style>
 	  </Application.Styles>
+
+    <Application.Resources>
+        <converters:IsDirtyColorConverter x:Key="IsDirtyColorConverter"/>
+    </Application.Resources>
 </Application>

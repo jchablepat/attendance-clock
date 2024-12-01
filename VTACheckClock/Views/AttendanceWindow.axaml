@@ -1,0 +1,50 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        WindowStartupLocation="CenterScreen"
+        SizeToContent="Manual"
+        WindowState="Maximized"
+        x:Class="VTACheckClock.Views.AttendanceWindow"
+        Title="Reporte de Asistencia">
+    <Grid RowDefinitions="Auto,*">
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" Margin="10">
+            <DatePicker x:Name="StartDatePicker" SelectedDate="{Binding StartDate}"/>
+            <DatePicker x:Name="EndDatePicker" SelectedDate="{Binding EndDate}"/>
+
+            <ComboBox Name="CmbOff" PlaceholderText="Seleccione una oficina" Width="200" Height="32" 
+                      ItemsSource="{Binding Offices}" SelectedIndex="{ Binding SelectedOffice }">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Offname}"/>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+
+            <Button Name="BtnGenerateReport" ToolTip.Tip="Generar Reporte" Click="GenerateReport">
+                <PathIcon Data="{StaticResource search_square_regular}" Foreground="Purple" />
+            </Button>
+
+            <Button Name="BtnExportExcel" ToolTip.Tip="Exportar Reporte a Excel" Click="BtnExportExcel_OnClick">
+                <PathIcon Data="{StaticResource arrow_download_regular}" Foreground="Green" />
+            </Button>
+        </StackPanel>
+
+        <Grid Grid.Row="1">
+            <Grid Name="DataGridContainer">
+
+            </Grid>
+          <Grid Name="LoadingOverlay" Classes="loading-overlay" IsVisible="False">
+              <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
+                  <ProgressBar Classes="centered" IsIndeterminate="True" Foreground="#e76f51" />
+                  <TextBlock Text="Cargando..."
+                             HorizontalAlignment="Center"
+                             FontSize="22"
+                             Foreground="White" ZIndex="100" />
+              </StackPanel>
+          </Grid>
+        </Grid>
+
+    </Grid>
+</Window>

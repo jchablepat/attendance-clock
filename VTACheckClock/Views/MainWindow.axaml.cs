@@ -38,11 +38,12 @@ namespace VTACheckClock.Views
             this.WhenActivated(d => d(ViewModel!.ShowLoginDialog.RegisterHandler(DoShowDialogAsync)));
             //this.WhenActivated(d => d(ViewModel!.ShowPwdPunchDialog.RegisterHandler(ShowPwdPunchDialogAsync)));
             this.WhenActivated(d => d(ViewModel!.ShowLoggerDialog.RegisterHandler(ShowLoggerDialogAsync)));
+            this.WhenActivated(d => d(ViewModel!.ShowAttendanceRptDialog.RegisterHandler(ShowAttendanceRptDialogAsync)));
             GetFMDs();
 
             Activated += OnActivated;
 
-            // Registra el manejador de eventos aqui o agrega el evento 'KeyDown' en la ventana del archivo .axaml.
+            // Registra el manejador de eventos aquí o agrega el evento 'KeyDown' en la ventana del archivo .axaml.
             KeyDown += OnKeyDown;
 
             Closed += (sender, args) => {
@@ -132,6 +133,16 @@ namespace VTACheckClock.Views
             interaction.SetOutput(result);
         }
 
+        private async Task ShowAttendanceRptDialogAsync(InteractionContext<AttendanceViewModel, bool> interaction)
+        {
+            var dialog = new AttendanceWindow() {
+                DataContext = interaction.Input
+            };
+
+            var result = await dialog.ShowDialog<bool>(this);
+            interaction.SetOutput(result);
+        }
+
         private async void OnWindowClosing(object sender, WindowClosingEventArgs e)
         {
             e.Cancel = true;
@@ -140,7 +151,6 @@ namespace VTACheckClock.Views
             } else {
                 await LogOut();
             }
-            Debug.WriteLine("You piece of human, closed the window!");
         }
 
         /// <summary>
