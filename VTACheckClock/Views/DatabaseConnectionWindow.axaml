@@ -20,9 +20,14 @@
       <Setter Property="Width" Value="100"/>
     </Style>
     <Style Selector="Button:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="White" />
       <Setter Property="BorderBrush" Value="Black" />
       <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="PathIcon">
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="Button:pointerover PathIcon">
+      <Setter Property="Foreground" Value="Red" />
     </Style>
     <Style Selector="Button.btn-primary">
       <Setter Property="Background" Value="#ff0078d7"/>
@@ -41,11 +46,13 @@
 
       <StackPanel Orientation="Horizontal">
         <TextBox x:Name="txtFilePath" Text="{Binding FilePath}" Width="350" IsReadOnly="True"/>
-        <Button Content="..." Width="30" Margin="5,0,0,0" Command="{Binding BrowseCommand}" />
+        <Button Width="30" Margin="0,0,0,0" Background="#e4241c" Command="{Binding BrowseCommand}">
+          <PathIcon Data="{StaticResource document_search_regular}" />
+        </Button>
       </StackPanel>
 
       <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-        <Button Name="btnConnect" Content="Conectar" Classes="btn-prinary" Margin="0,0,5,0" Command="{ Binding ReadFileCommand }" />
+        <Button Name="btnConnect" Content="Conectar" Classes="btn-primary" Margin="0,0,5,0" Command="{ Binding ReadFileCommand }" />
         <Button Name="btnCancel" Content="Cerrar" Classes="btn-danger" />
       </StackPanel>
     </StackPanel>

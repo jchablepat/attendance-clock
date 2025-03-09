@@ -24,6 +24,11 @@ namespace VTACheckClock.Services
         /// </summary>
         public static async Task<RemoteTime> GetTimeNow() {
             var time = await GetDateTime();
+
+            if (time == DateTime.MinValue) {
+                time = DateTime.Now;
+            }
+
             return new RemoteTime {
                 CurrentTime = time,
                 TimeString = time.ToString("HH:mm:ss")
@@ -37,7 +42,7 @@ namespace VTACheckClock.Services
         /// <returns></returns>
         public static async Task<DateTime> GetDateTime()
         {
-            DateTime dateTime = DateTime.Now;
+            DateTime dateTime = DateTime.MinValue;  //DateTime.Now;
             try {
                 DateTime localutc = DateTime.UtcNow;
                 string? local_tz = TimeZoneInfo.Local.Id;
@@ -52,8 +57,9 @@ namespace VTACheckClock.Services
                     dateTime = TimeZoneInfo.ConvertTimeFromUtc(dat, timeZone);
                 }
             } catch {
-                dateTime = DateTime.Now;
+                dateTime = DateTime.MinValue; //DateTime.Now;
             }
+
             return dateTime;
         }
 

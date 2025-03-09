@@ -15,6 +15,7 @@ using ICSharpCode.SharpZipLib.BZip2;
 using System.Globalization;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace VTACheckClock.Services
 {
@@ -631,12 +632,14 @@ namespace VTACheckClock.Services
                     Columns = { "emp_id", "evt_id", "punc_time", "punc_calc" }
                 };
 
-                foreach (string str in las_punches.Split(GlobalVars.SeparAtor))
+                var punchData = las_punches.Split(GlobalVars.SeparAtor);
+
+                foreach (string str in punchData)
                 {
                     string[] pdata = str.Split('|');
                     string client_time = pdata[2].TrimEnd('\0'); // Eliminará todos los caracteres nulos al final de la cadena
-                    string calc_time = (pdata.Length == 4) ? pdata[3] : "null";
-                    
+                    string calc_time = (pdata.Length == 4 && IsValidDateTime(pdata[3])) ? pdata[3] : "null";
+
                     // Ajuste por un error al no pasar un Id de Oficina correcta
                     if(pdata[1] != "0") {
                         punc_data.Rows.Add(int.Parse(pdata[0]), int.Parse(pdata[1]), client_time, calc_time);
@@ -653,6 +656,46 @@ namespace VTACheckClock.Services
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Valida que una fecha string tenga un formato correcto incluyendo la hora, minutos y segundos, y que además detecte caracteres nulos.
+        /// </summary>
+        /// <param name="dateTimeString"></param>
+        /// <returns></returns>
+        public static bool IsValidDateTime(string dateTimeString)
+        {
+            // Verificar si la cadena es nula o vacía
+            if (string.IsNullOrWhiteSpace(dateTimeString))
+            {
+                return false;
+            }
+
+            // Verificar si contiene caracteres nulos
+            if (dateTimeString.Contains('\0'))
+            {
+                return false;
+            }
+
+            // Patrón para validar formato YYYY/MM/DD HH:MM:SS
+            string pattern = @"^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}$";
+            if (!Regex.IsMatch(dateTimeString, pattern))
+            {
+                return false;
+            }
+
+            // Intentar convertir la cadena a DateTime para validar que sea una fecha y hora válida
+            try
+            {
+                DateTime.ParseExact(dateTimeString, "yyyy/MM/dd HH:mm:ss", CultureInfo.InvariantCulture);
+                return true;
+            }
+            catch (FormatException) {
+                return false;
+            }
+            catch (Exception) {
+                return false;
+            }
         }
 
         public static async Task<bool> SendPunchesAsync(ScantRequest la_req)

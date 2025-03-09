@@ -17,6 +17,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using VTACheckClock.Helpers;
 using VTACheckClock.Models;
 using VTACheckClock.Services;
 using VTACheckClock.Services.Libs;
@@ -56,7 +57,8 @@ namespace VTACheckClock.Views
             //});
 
             //HideWindowBorders();
-            SetParentWindow();
+            WindowHelper.CenterOnScreen(this);
+
             dgAttsList.SelectionChanged += DgAttsList_SelectionChanged;
         }
 
@@ -87,14 +89,6 @@ namespace VTACheckClock.Views
 
             // Obtiene la pantalla en la que se encuentra la posición del mouse.
             //Screen screen = Screens.ScreenFromPoint(new PixelPoint(mouseX, mouseY));
-
-            var screens = Screens.All;
-            if (screens.Count > 1) {
-                var secondScreen = screens[1];
-                int secondScreenX = secondScreen.Bounds.X; // Obtiene la coordenada X de la segunda pantalla.
-                int secondScreenY = secondScreen.Bounds.Y; // Obtiene la coordenada Y de la segunda pantalla.
-                Position = new PixelPoint(secondScreenX, secondScreenY); // Establece la posición de la ventana en la segunda pantalla (en este caso, en X = 1920 y Y = 0).
-            }
 
             // Establece la posición de la ventana en la pantalla en la que se encuentra el mouse.
             //WindowStartupLocation = WindowStartupLocation.Manual;
@@ -166,7 +160,8 @@ namespace VTACheckClock.Views
         /// <param name="e"></param>
         private async void OnKeyDown(object? sender, KeyEventArgs e)
         {
-            if (e.Key == Key.F10) {
+            if (e.Key == Key.T && e.KeyModifiers.HasFlag(KeyModifiers.Control)) {
+                // Si se presiono Ctrl + T
                 e.Handled = true;
                 //await TestAssistance();
             } else if(e.Key == Key.F11) {
@@ -197,25 +192,14 @@ namespace VTACheckClock.Views
 
         public async Task TestAssistance()
         {
-            var _result = await MessageBoxManager.GetMessageBoxCustom(
-                new MessageBoxCustomParams {
-                    //Topmost = true,
-                    ContentHeader = "VTAttendance Tester",
-                    ContentMessage = "Ingrese el ID del empleado: ",
-                    //WatermarkText = "Solo números",
-                    ButtonDefinitions = new[] {
-                        new ButtonDefinition { Name = "Cancel", IsCancel = true },
-                        new ButtonDefinition { Name = "Confirm", IsDefault = true } 
-                    },
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                    Width = 500,
-                //Height = 500,
-                //SizeToContent = SizeToContent.Manual
-            }).ShowWindowDialogAsync(this);
+            var window = new EmployeeCheckWindow {
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            };
 
-            if(_result != null) {
-                int.TryParse(_result, out int emp_id);
-                int found_idx = fmd_collection.FindIndex(f => f.empid == emp_id);
+            await window.ShowDialog(this);
+
+            if (window.SelectedAction != null) {
+                int found_idx = fmd_collection.FindIndex(f => f.empid == window.EmployeeId);
 
                 //var parentViewModel = new MainWindowViewModel("");
                 //DataContext = parentViewModel;

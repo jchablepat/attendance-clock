@@ -1,25 +1,31 @@
-﻿using System;
+﻿using NLog;
+using System;
 using System.Data;
-using System.Diagnostics;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
 using System.Threading.Tasks;
+using VTACheckClock.Models;
 
 namespace VTACheckClock.Services
 {
     class EmailSenderHandler
     {
-        private static bool SetMailConfig(ref SmtpClient oSmtpClient)
+        private static readonly Logger log = LogManager.GetLogger("app_logger");
+
+        private static bool SetMailConfig(ref SmtpClient oSmtpClient, ref string recipients)
         {
             bool setConfig = false;
+            var config = RegAccess.GetMainSettings() ?? new MainSettings();
 
-            var host = "smtp.gmail.com"; // tuServidorSmtp
-            int port = 587;
-            var username = "jchablepat@gmail.com";
-            var password = "lexhnxuqjsucmyvc";
-
-            if (!string.IsNullOrWhiteSpace(host) && port != 0 && !string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(password))
+            var host = config.MailServer; // tuServidorSmtp
+            int port = !string.IsNullOrEmpty(config?.MailPort) ? int.Parse(config.MailPort) : 0;
+            var username = config.MailUser;
+            var password = config.MailPass;
+            bool IsEnabled = config.MailEnabled;
+            recipients = config.MailRecipient ?? "";
+            
+            if (!string.IsNullOrWhiteSpace(host) && port != 0 && !string.IsNullOrWhiteSpace(username) && !string.IsNullOrEmpty(recipients) && !string.IsNullOrWhiteSpace(password) && IsEnabled)
             {
                 oSmtpClient.Host = host;
                 oSmtpClient.Port = port;
@@ -37,16 +43,19 @@ namespace VTACheckClock.Services
         {
             try {
                 SmtpClient oSmtpClient = new();
-                if (!SetMailConfig(ref oSmtpClient)) {
+                string recipients = "";
+
+                if (!SetMailConfig(ref oSmtpClient, ref recipients)) {
                     return;
                 }
 
+                NetworkCredential? credentials = oSmtpClient?.Credentials as NetworkCredential;
+
                 var oMailMessage = new MailMessage {
-                    From = new MailAddress("jchablepat@gmail.com", "VTSoftware")
+                    From = new MailAddress(credentials?.UserName ?? "", "VTSoftware")
                 };
 
-                string to_emails = "progjr8.vtsoft@gmail.com";
-                SetToAddress(ref oMailMessage, to_emails);
+                SetToAddress(ref oMailMessage, recipients);
 
                 oMailMessage.Subject = subject;
                 oMailMessage.Body = body;
@@ -55,7 +64,7 @@ namespace VTACheckClock.Services
                 await oSmtpClient.SendMailAsync(oMailMessage);
             }
             catch (Exception ex) {
-                Debug.WriteLine($"Error al enviar el correo: {ex.Message} => { ex.InnerException?.Message ?? "" }");
+                log.Warn($"Error al enviar el correo: {ex.Message} => { ex.InnerException?.Message ?? "" }");
             }
         }
 

@@ -18,20 +18,25 @@ namespace VTACheckClock.Services.Libs
         private static ReaderCollection? _readers;
         public static Logger Log = LogManager.GetLogger("app_logger");
 
+        /// <summary>
+        /// Obtiene los lectores de huellas disponibles y asigna la instancia del primero por defecto
+        /// </summary>
         public static void LoadCurrentReader()
         {
-            _readers = ReaderCollection.GetReaders();
-            foreach (Reader Reader in _readers)
-            {
-                var reader_name = Reader.Description.Name;
-            }
+            try {
+                _readers = ReaderCollection.GetReaders();
+                foreach (Reader Reader in _readers)
+                {
+                    var reader_name = Reader.Description.Name;
+                }
 
-            if (CurrentReader != null) {
-                CurrentReader.Dispose();
-                CurrentReader = null;
-            }
+                if (CurrentReader != null) {
+                    CurrentReader.Dispose();
+                    CurrentReader = null;
+                }
 
-            CurrentReader = _readers[0];
+                CurrentReader = _readers[0];
+            } catch {}
         }
 
         /// <summary>
@@ -42,21 +47,19 @@ namespace VTACheckClock.Services.Libs
         {
             if(CurrentReader == null) return false;
 
-            using (Tracer tracer = new("UrUClass::OpenReader"))
+            using Tracer tracer = new("UrUClass::OpenReader");
+            Reset = false;
+            Constants.ResultCode result = Constants.ResultCode.DP_DEVICE_FAILURE;
+            result = CurrentReader.Open(Constants.CapturePriority.DP_PRIORITY_COOPERATIVE);
+
+            if (result != Constants.ResultCode.DP_SUCCESS)
             {
-                Reset = false;
-                Constants.ResultCode result = Constants.ResultCode.DP_DEVICE_FAILURE;
-                result = CurrentReader.Open(Constants.CapturePriority.DP_PRIORITY_COOPERATIVE);
-
-                if (result != Constants.ResultCode.DP_SUCCESS)
-                {
-                    Show(null, "Lector de Huella", "El dispositivo respondió con el error:  " + result, MessageBoxButtons.Ok);
-                    Reset = true;
-                    return false;
-                }
-
-                return true;
+                Show(null, "Lector de Huella", "El dispositivo respondió con el error:  " + result, MessageBoxButtons.Ok);
+                Reset = true;
+                return false;
             }
+
+            return true;
         }
 
         /// <summary>

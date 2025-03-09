@@ -128,7 +128,7 @@
                     <Button IsVisible="False" Width="50" Margin="2 0" Height="50" ToolTip.Tip="Send employees with no check-in or check-out by email." Command="{ Binding SendEmailCommand }">
                       <PathIcon Data="{StaticResource send_regular}" Foreground="Purple" />
                     </Button>
-                    <Button IsEnabled="False" Width="50" Margin="2 0" Height="50" ToolTip.Tip="Asistencia de empleados" Command="{ Binding PreviewAttendanceReportCommand }">
+                    <Button IsVisible="False" Width="50" Margin="2 0" Height="50" ToolTip.Tip="Asistencia de empleados" Command="{ Binding PreviewAttendanceReportCommand }">
                        <PathIcon Data="{StaticResource document_search_regular}" Foreground="Purple" />
                     </Button>
                   </StackPanel>

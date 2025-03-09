@@ -19,54 +19,37 @@ namespace VTACheckClock.Services
                     RegistryKey? la_key = The_key();
 
                    if (la_key != null) {
-                        SimpleAES? aes_crypt = new();
-                        byte[]? employees_host = la_key.GetValue("employees_host") as byte[];
-                        byte[]? websocket_enabled = SetNullValue(la_key.GetValue("websocket_enabled"));
-                        byte[]? websocket_host = SetNullValue(la_key.GetValue("websocket_host"));
-                        byte[]? websocket_port = SetNullValue(la_key.GetValue("websocket_port"));
-                        byte[]? pusher_app_id = SetNullValue(la_key.GetValue("pusher_app_id"));
-                        byte[]? pusher_key = SetNullValue(la_key.GetValue("pusher_key"));
-                        byte[]? pusher_secret = SetNullValue(la_key.GetValue("pusher_secret"));
-                        byte[]? pusher_cluster = SetNullValue(la_key.GetValue("pusher_cluster"));
-                        byte[]? event_name = SetNullValue(la_key.GetValue("event_name"));
-                        byte[]? ws_url = SetNullValue(la_key.GetValue("ws_url"));
-                        byte[]? db_server = SetNullValue(la_key.GetValue("db_server"));
-                        byte[]? db_name = SetNullValue(la_key.GetValue("db_name"));
-                        byte[]? db_user = SetNullValue(la_key.GetValue("db_user"));
-                        byte[]? db_pass = SetNullValue(la_key.GetValue("db_pass"));
-                        byte[]? ftp_url = SetNullValue(la_key.GetValue("ftp_url"));
-                        byte[]? ftp_port = SetNullValue(la_key.GetValue("ftp_port"));
-                        byte[]? ftp_user = SetNullValue(la_key.GetValue("ftp_user"));
-                        byte[]? ftp_pass = SetNullValue(la_key.GetValue("ftp_pass"));
-                        byte[]? path_tmp = SetNullValue(la_key.GetValue("path_tmp"));
-                        byte[]? logo = SetNullValue(la_key.GetValue("logo"));
-
                         MainSettings la_resp = new() {
-                            Ws_url = ws_url != null ? aes_crypt.DecryptFromBytes(ws_url) : "",
-                            Db_server = db_server != null ? aes_crypt.DecryptFromBytes(db_server) : "",
-                            Db_name = db_name != null ? aes_crypt.DecryptFromBytes(db_name) : "",
-                            Db_user = db_user != null ? aes_crypt.DecryptFromBytes(db_user) : "",
-                            Db_pass = db_pass != null ? aes_crypt.DecryptFromBytes(db_pass) : "",
-                            Ftp_url = ftp_url != null ? aes_crypt.DecryptFromBytes(ftp_url) : "",
-                            Ftp_port = ftp_port != null ? aes_crypt.DecryptFromBytes(ftp_port) : "",
-                            Ftp_user = ftp_user != null ? aes_crypt.DecryptFromBytes(ftp_user): "",
-                            Ftp_pass = ftp_pass != null ? aes_crypt.DecryptFromBytes(ftp_pass): "",
-                            Path_tmp = path_tmp != null ? aes_crypt.DecryptFromBytes(path_tmp): "",
-                            Logo = logo != null ? aes_crypt.DecryptFromBytes(logo): "",
+                            Ws_url = GetRegValue("ws_url"),
+                            Db_server = GetRegValue("db_server"),
+                            Db_name = GetRegValue("db_name"),
+                            Db_user = GetRegValue("db_user"),
+                            Db_pass = GetRegValue("db_pass"),
+                            Ftp_url = GetRegValue("ftp_url"),
+                            Ftp_port = GetRegValue("ftp_port"),
+                            Ftp_user = GetRegValue("ftp_user"),
+                            Ftp_pass = GetRegValue("ftp_pass"),
+                            Path_tmp = GetRegValue("path_tmp"),
+                            Logo = GetRegValue("logo"),
                             //These parameters are optionals so can be empty.
-                            Employees_host = (employees_host != null) ? aes_crypt.DecryptFromBytes(employees_host) : "",
-                            Websocket_enabled = (websocket_enabled != null) ? Convert.ToBoolean(aes_crypt.DecryptFromBytes(websocket_enabled)) : false,
-                            Websocket_host = (websocket_host != null) ? aes_crypt.DecryptFromBytes(websocket_host) : "",
-                            Websocket_port = (websocket_port != null) ? aes_crypt.DecryptFromBytes(websocket_port) : "",
-                            Pusher_app_id = (pusher_app_id != null) ? aes_crypt.DecryptFromBytes(pusher_app_id) : "",
-                            Pusher_key = (pusher_key != null) ? aes_crypt.DecryptFromBytes(pusher_key) : "",
-                            Pusher_secret = (pusher_secret != null) ? aes_crypt.DecryptFromBytes(pusher_secret) : "",
-                            Pusher_cluster = (pusher_cluster != null) ? aes_crypt.DecryptFromBytes(pusher_cluster) : "",
-                            Event_name = (event_name != null) ? aes_crypt.DecryptFromBytes(event_name) : ""
+                            Employees_host = GetRegValue("employees_host"),
+                            Websocket_enabled = GetBoolFromByte("websocket_enabled"),
+                            Websocket_host = GetRegValue("websocket_host"),
+                            Websocket_port = GetRegValue("websocket_port"),
+                            Pusher_app_id = GetRegValue("pusher_app_id"),
+                            Pusher_key = GetRegValue("pusher_key"),
+                            Pusher_secret = GetRegValue("pusher_secret"),
+                            Pusher_cluster = GetRegValue("pusher_cluster"),
+                            Event_name = GetRegValue("event_name"),
+                            MailEnabled = GetBoolFromByte("mailEnabled"),
+                            MailServer = GetRegValue("mailServer"),
+                            MailPort = GetRegValue("mailPort"),
+                            MailUser = GetRegValue("mailUser"),
+                            MailPass = GetRegValue("mailPass"),
+                            MailRecipient = GetRegValue("mailRecipient"),
                         };
 
                         la_key.Close();
-                        aes_crypt = null;
 
                         return la_resp;
                    }
@@ -81,6 +64,36 @@ namespace VTACheckClock.Services
         public static byte[]? SetNullValue(object? objVal)
         {
             return string.IsNullOrEmpty(objVal?.ToString()) ? null : (byte[])objVal;
+        }
+
+        public static bool GetBoolFromByte(string key)
+        {
+            RegistryKey? la_key = The_key();
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && la_key != null)
+            {
+                SimpleAES? aes_crypt = new();
+                byte[]? byteValue = SetNullValue(la_key.GetValue(key));
+
+                return (byteValue != null) && Convert.ToBoolean(aes_crypt.DecryptFromBytes(byteValue));
+            }
+
+            return false;
+        }
+
+        public static int GetIntFromByte(string key)
+        {
+            RegistryKey? la_key = The_key();
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && la_key != null)
+            {
+                SimpleAES? aes_crypt = new();
+                byte[]? byteValue = SetNullValue(la_key.GetValue(key));
+
+                return (byteValue != null) ? Convert.ToInt32(aes_crypt.DecryptFromBytes(byteValue)) : 0;
+            }
+
+            return 0;
         }
 
         /// <summary>
@@ -111,18 +124,13 @@ namespace VTACheckClock.Services
 
                     if (la_key != null) {
                         SimpleAES? aes_crypt = new();
-                        byte[]? timezone = SetNullValue(la_key.GetValue("clock_timezone"));
-                        byte[]? clock_office = SetNullValue(la_key.GetValue("clock_office"));
-                        byte[]? clock_user = SetNullValue(la_key.GetValue("clock_user"));
-                        byte[]? clock_pass = SetNullValue(la_key.GetValue("clock_pass"));
-                        byte[]? clock_uuid = SetNullValue(la_key.GetValue("clock_uuid"));
 
                         ClockSettings la_resp = new() {
-                            clock_office = clock_office != null ? int.Parse(aes_crypt.DecryptFromBytes(clock_office)): 0,
-                            clock_user = clock_user != null ? aes_crypt.DecryptFromBytes(clock_user): null,
-                            clock_pass = clock_pass != null ? aes_crypt.DecryptFromBytes(clock_pass): null,
-                            clock_uuid = clock_uuid != null ? aes_crypt.DecryptFromBytes(clock_uuid): null,
-                            clock_timezone = (timezone != null) ? aes_crypt.DecryptFromBytes(timezone) : ""
+                            clock_office = GetIntFromByte("clock_office"),
+                            clock_user = GetRegValue("clock_user", null),
+                            clock_pass = GetRegValue("clock_pass", null),
+                            clock_uuid = GetRegValue("clock_uuid", null),
+                            clock_timezone = GetRegValue("clock_timezone")
                         };
 
                         la_key.Close();
@@ -154,57 +162,39 @@ namespace VTACheckClock.Services
                     RegistryKey? la_key = The_key();
 
                     if (la_key != null) {
-                        SimpleAES? aes_crypt = new();
-                        byte[]? employees_host = SetNullValue(la_key.GetValue("employees_host"));
-                        byte[]? websocket_enabled = SetNullValue(la_key.GetValue("websocket_enabled"));
-                        byte[]? websocket_host = SetNullValue(la_key.GetValue("websocket_host"));
-                        byte[]? websocket_port = SetNullValue(la_key.GetValue("websocket_port"));
-                        byte[]? pusher_app_id = SetNullValue(la_key.GetValue("pusher_app_id"));
-                        byte[]? pusher_key = SetNullValue(la_key.GetValue("pusher_key"));
-                        byte[]? pusher_secret = SetNullValue(la_key.GetValue("pusher_secret"));
-                        byte[]? pusher_cluster = SetNullValue(la_key.GetValue("pusher_cluster"));
-                        byte[]? event_name = SetNullValue(la_key.GetValue("event_name"));
-                        byte[]? ws_url = SetNullValue(la_key.GetValue("ws_url"));
-                        byte[]? ftp_url = SetNullValue(la_key.GetValue("ftp_url"));
-                        byte[]? ftp_port = SetNullValue(la_key.GetValue("ftp_port"));
-                        byte[]? ftp_user = SetNullValue(la_key.GetValue("ftp_user"));
-                        byte[]? ftp_pass = SetNullValue(la_key.GetValue("ftp_pass"));
-                        byte[]? path_tmp = SetNullValue(la_key.GetValue("path_tmp"));
-                        byte[]? logo = SetNullValue(la_key.GetValue("logo"));
-
                         msetts = new MainSettings {
-                            Ws_url = ws_url != null ? aes_crypt.DecryptFromBytes(ws_url) : "",
-                            Ftp_url = ftp_url != null ? aes_crypt.DecryptFromBytes(ftp_url) : "",
-                            Ftp_port = ftp_port != null ? aes_crypt.DecryptFromBytes(ftp_port) : "",
-                            Ftp_user = ftp_user != null ? aes_crypt.DecryptFromBytes(ftp_user) : "",
-                            Ftp_pass = ftp_pass != null ? aes_crypt.DecryptFromBytes(ftp_pass) : "",
-                            Path_tmp = path_tmp != null ? aes_crypt.DecryptFromBytes(path_tmp) : "",
-                            Logo = logo != null ? aes_crypt.DecryptFromBytes(logo) : "",
+                            Ws_url = GetRegValue("ws_url"),
+                            Ftp_url = GetRegValue("ftp_url"),
+                            Ftp_port = GetRegValue("ftp_port"),
+                            Ftp_user = GetRegValue("ftp_user"),
+                            Ftp_pass = GetRegValue("ftp_pass"),
+                            Path_tmp = GetRegValue("path_tmp"),
+                            Logo = GetRegValue("logo"),
                             //These parameters are optionals so can be empty.
-                            Employees_host = (employees_host != null) ? aes_crypt.DecryptFromBytes(employees_host) : "",
-                            Websocket_enabled = (websocket_enabled != null) && Convert.ToBoolean(aes_crypt.DecryptFromBytes(websocket_enabled)),
-                            Websocket_host = (websocket_host != null) ? aes_crypt.DecryptFromBytes(websocket_host) : "",
-                            Websocket_port = (websocket_port != null) ? aes_crypt.DecryptFromBytes(websocket_port) : "",
-                            Pusher_app_id = (pusher_app_id != null) ? aes_crypt.DecryptFromBytes(pusher_app_id) : "",
-                            Pusher_key = (pusher_key != null) ? aes_crypt.DecryptFromBytes(pusher_key) : "",
-                            Pusher_secret = (pusher_secret != null) ? aes_crypt.DecryptFromBytes(pusher_secret) : "",
-                            Pusher_cluster = (pusher_cluster != null) ? aes_crypt.DecryptFromBytes(pusher_cluster) : "",
-                            Event_name = (event_name != null) ? aes_crypt.DecryptFromBytes(event_name) : ""
+                            Employees_host = GetRegValue("employees_host"),
+                            Websocket_enabled = GetBoolFromByte("websocket_enabled"),
+                            Websocket_host = GetRegValue("websocket_host"),
+                            Websocket_port = GetRegValue("websocket_port"),
+                            Pusher_app_id = GetRegValue("pusher_app_id"),
+                            Pusher_key = GetRegValue("pusher_key"),
+                            Pusher_secret = GetRegValue("pusher_secret"),
+                            Pusher_cluster = GetRegValue("pusher_cluster"),
+                            Event_name = GetRegValue("event_name"),
+                            MailEnabled = GetBoolFromByte("mailEnabled"),
+                            MailServer = GetRegValue("mailServer"),
+                            MailPort = GetRegValue("mailPort"),
+                            MailUser = GetRegValue("mailUser"),
+                            MailPass = GetRegValue("mailPass"),
+                            MailRecipient = GetRegValue("mailRecipient"),
                         };
 
                         if (GlobalVars.VTAttModule == 1) {
-                            byte[]? timezone = SetNullValue(la_key.GetValue("clock_timezone"));
-                            byte[]? clock_office = SetNullValue(la_key.GetValue("clock_office"));
-                            byte[]? clock_user = SetNullValue(la_key.GetValue("clock_user"));
-                            byte[]? clock_pass = SetNullValue(la_key.GetValue("clock_pass"));
-                            byte[]? clock_uuid = SetNullValue(la_key.GetValue("clock_uuid"));
-
                             csetts = new ClockSettings {
-                                clock_office = clock_office != null ? int.Parse(aes_crypt.DecryptFromBytes(clock_office)) : 0,
-                                clock_user = clock_user != null ? aes_crypt.DecryptFromBytes(clock_user) : null,
-                                clock_pass = clock_pass != null ? aes_crypt.DecryptFromBytes(clock_pass) : null,
-                                clock_uuid = clock_uuid != null ? aes_crypt.DecryptFromBytes(clock_uuid) : null,
-                                clock_timezone = (timezone != null) ? aes_crypt.DecryptFromBytes(timezone) : ""
+                                clock_office = GetIntFromByte("clock_office"),
+                                clock_user = GetRegValue("clock_user", null),
+                                clock_pass = GetRegValue("clock_pass", null),
+                                clock_uuid = GetRegValue("clock_uuid", null),
+                                clock_timezone = GetRegValue("clock_timezone")
                             };
 
                             GlobalVars.TimeZone = csetts.clock_timezone;
@@ -213,7 +203,6 @@ namespace VTACheckClock.Services
                         }
 
                         la_key.Close();
-                        aes_crypt = null;
 
                         return true;
                     }
@@ -245,21 +234,21 @@ namespace VTACheckClock.Services
         /// <summary>
         /// Método universal para recuperar valores del Registro de Windows.
         /// </summary>
-        /// <param name="nom_val">Nombre del valor que se recuperará.</param>
+        /// <param name="key">Nombre del valor que se recuperará.</param>
+        /// <param name="dValue">Valor por defecto.</param>
         /// <returns>Cadena de texto con el valor solicitado, o null en caso de fallo.</returns>
-        public static string? GetRegValue(string nom_val)
+        public static string? GetRegValue(string key, string? dValue = "")
         {
             try {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
                     RegistryKey? la_key = The_key();
 
                     if (la_key != null) {
-                        string? la_resp;
-                        byte[]? val_name = SetNullValue(la_key.GetValue(nom_val));
+                        byte[]? byteValue = SetNullValue(la_key.GetValue(key));
 
                         SimpleAES? aes_crypt = new();
 
-                        la_resp = val_name != null ? aes_crypt.DecryptFromBytes(val_name): null;
+                        string? la_resp = byteValue != null ? aes_crypt.DecryptFromBytes(byteValue) : dValue;
                         la_key.Close();
                         aes_crypt = null;
 
@@ -357,6 +346,12 @@ namespace VTACheckClock.Services
                         la_key.SetValue("pusher_secret", aes_crypt.EncryptToBytes(msettings.Pusher_secret));
                         la_key.SetValue("pusher_cluster", aes_crypt.EncryptToBytes(msettings.Pusher_cluster));
                         la_key.SetValue("event_name", aes_crypt.EncryptToBytes(msettings.Event_name));
+                        la_key.SetValue("mailEnabled", aes_crypt.EncryptToBytes(msettings.MailEnabled.ToString()));
+                        la_key.SetValue("mailServer", aes_crypt.EncryptToBytes(msettings.MailServer));
+                        la_key.SetValue("mailPort", aes_crypt.EncryptToBytes(msettings.MailPort));
+                        la_key.SetValue("mailUser", aes_crypt.EncryptToBytes(msettings.MailUser));
+                        la_key.SetValue("mailPass", aes_crypt.EncryptToBytes(msettings.MailPass));
+                        la_key.SetValue("mailRecipient", aes_crypt.EncryptToBytes(msettings.MailRecipient));
 
                         if (GlobalVars.VTAttModule == 1) {
                             la_key.SetValue("clock_office", aes_crypt.EncryptToBytes(csettings.clock_office.ToString()));

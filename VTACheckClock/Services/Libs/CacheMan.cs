@@ -673,6 +673,9 @@ namespace VTACheckClock.Services.Libs
                         break;
                 }
 
+                // Ignorar líneas vacías, nulas o con espacios en blanco. Tambien, omite las lineas con caracteres vacios
+                old_punches = old_punches.Where(line => !string.IsNullOrWhiteSpace(line) && !line.All(c => c == '\0')).ToList();
+
                 all_punches.AddRange(new_punches);
                 all_punches.AddRange(old_punches);
 
@@ -683,7 +686,8 @@ namespace VTACheckClock.Services.Libs
                 }
 
                 return la_resp;
-            } catch {
+            } catch(Exception ex) {
+                log.Warn("GetCachedPunches error: " + ex.Message);
                 return Array.Empty<string>();
             }
         }

@@ -69,19 +69,23 @@ namespace VTACheckClock.ViewModels
         private string _noticeTitle = "", _noticeBody = "", _platform = "", _syncError = "";
         private Bitmap? _noticeImage;
         private bool _emptyNotices;
-        private readonly DispatcherTimer tmrCachedTime = new();
+        private DispatcherTimer tmrCachedTime = new();
         private readonly DispatcherTimer tmrClock = new();
         private readonly DispatcherTimer tmrNotices = new();
         private readonly DispatcherTimer tmrSyncRetry = new();
         private readonly DispatcherTimer tmrCheckNetConnection = new();
         private readonly BackgroundWorker bgwLoader = new();
+        private DateTime calculatedTime; // Hora basada en NTP;
+        private DateTime lastUpdateTime;
+        private DateTime lastNetworkTime;
+        private TimeSpan networkOffset;
+        private int failedAttempts = 0; // Contador de intentos fallidos
 
         //private SourceList<Employee> _sourceList = new();
         //private readonly ReadOnlyObservableCollection<Employee> _attsList;
         //public ReadOnlyObservableCollection<Employee> AttsList => _attsList;
         public ObservableCollection<Employee>? AttsList { get; set; } = new();
         public ObservableCollection<Employee> SearchResults { get; } = new();
-
         public ObservableCollection<EmployeePunch> EmpPunches { get; }
         public ObservableCollection<Notice> Notices { get; }
         public ObservableCollection<FMDItem> FingerPrints { get; }
@@ -229,7 +233,7 @@ namespace VTACheckClock.ViewModels
         /// </summary>
         public PageTransition? SelectedTransition
         {
-            get { return _SelectedTransition; }
+            get => _SelectedTransition;
             set { this.RaiseAndSetIfChanged(ref _SelectedTransition, value); }
         }
 
@@ -360,7 +364,7 @@ namespace VTACheckClock.ViewModels
                 }
             }
             catch (Exception ex) {
-                Debug.WriteLine(ex.ToString());
+                log.Warn("Error al actualizar la búsqueda: " + ex.ToString());
             }
         }
 
@@ -490,6 +494,8 @@ namespace VTACheckClock.ViewModels
                 IsInternetConnected = e.IsAvailable;
 
                 Dispatcher.UIThread.InvokeAsync(async () => {
+                    await ToggleConnIndicator();
+
                     if (IsInternetConnected) {
                         // Esperar durante 5 segundos antes de sincronizar datos
                         await Task.Delay(TimeSpan.FromSeconds(5));
@@ -497,7 +503,8 @@ namespace VTACheckClock.ViewModels
                         // Verificar si la conexión sigue activa antes de sincronizar
                         if (IsInternetConnected) {
                             log.Warn("El equipo se conectó de nuevo a Internet.");
-                       
+
+                            await UpdateNetworkTimeAsync();
                             await SyncWithLoader();
                             await _WSClient.ReloadConnection();
                         } else {
@@ -596,7 +603,10 @@ namespace VTACheckClock.ViewModels
              }
         }
 
-
+        /// <summary>
+        /// Método para buscar un empleado en la lista de checadas en la pantalla principal
+        /// </summary>
+        /// <param name="s">Nombre del empleado</param>
         private async void DoSearch(string s)
         {
             SearchResults.Clear();
@@ -647,8 +657,7 @@ namespace VTACheckClock.ViewModels
         private async Task FormLoad()
         {
             await FormInit();
-            if (!GlobalVars.NoFPReader) StartReader();
-            await SetClock();
+
             m_settings = RegAccess.GetMainSettings() ?? new MainSettings();
             await _WSClient.Connect();
         }
@@ -662,10 +671,13 @@ namespace VTACheckClock.ViewModels
             SetupTransitions();
             ConfigTimers();
             ToggleTimers(false);
+
+            await SetClock();
             await UpdateInfoLabels(0);
             MakeClockSession();
             GetOffice();
             SetLogo();
+            StartReader();
         }
 
         /// <summary>
@@ -696,6 +708,8 @@ namespace VTACheckClock.ViewModels
         private async Task<bool> SyncAll()
         {
             CommonProcs.SetOfflineMode();
+            await ToggleConnIndicator();
+
             bool upload_result;
             //ToggleConnIndicator(!GlobalVars.BeOffline);
 
@@ -717,11 +731,12 @@ namespace VTACheckClock.ViewModels
             if (ScheduleTriggered && upload_result) {
                 LastSyncDate = GetRemoteDateTime();
                 ScheduleTriggered = false;
-                log.Info("Sincronización programada finalizada correctamente!");
+                log.Info("La sincronización programada ha finalizado correctamente!");
             } else if(RetryingSync && upload_result) {
-                log.Info("Intento de Sincronización finalizada correctamente!");
+                log.Info("El intento de Sincronización finalizó correctamente!");
                 RetryingSync = false;
             }
+
             return upload_result;
         }
 
@@ -882,6 +897,7 @@ namespace VTACheckClock.ViewModels
         {
             await GetNotices();
         }
+
         /// <summary>
         /// Agrega un aviso al recuperar el registro en tiempo real desde el servidor de WebSocket
         /// </summary>
@@ -919,19 +935,21 @@ namespace VTACheckClock.ViewModels
         /// </summary>
         private void StartReader()
         {
+            //if (!GlobalVars.NoFPReader) return;
             try {
                 UrUClass.LoadCurrentReader();
 
                 if (!UrUClass.OpenReader()) {
-                    //KillMe("No se pudo inicializar el Lector de Huellas.");
+                    KillMe("No se pudo inicializar el Lector de Huellas.");
                 }
 
                 if (!UrUClass.StartCaptureAsync(OnCaptured))
                 {
-                    //KillMe("El manejador de evento del Lector de Huella no se puedo asociar.");
+                    KillMe("El manejador de evento del Lector de Huella no se puedo asociar.");
                 }
             } catch(Exception ex) {
                 Dispatcher.UIThread.InvokeAsync(async () => {
+                    log.Warn("Error general del Lector de Huellas ==> " + ex.Message);
                     await Show(null, "Lector no encontrado", "No se ha encontrado ningún lector de huella dactilar o no se ha podido tener acceso al mismo.\n\nPruebe una de las siguientes opciones:\n\n1. Rectifique que el lector se encuentra debidamente conectado al equipo; deberá ver una luz azul en el lector que así lo indica.\n2. Asegúrese que los controladores necesarios han sido correctamente instalados.\n3. Conecte y desconecte el lector o conéctelo a un puerto USB diferente.\n4. Reinicie el equipo.\n\nSi el problema persiste, póngase en contacto con el administrador del sistema.\n\nLa aplicación terminará ahora.", MessageBoxButtons.Ok);
                     KillMe("Error general del Lector de Huellas ==> " + ex.Message);
                 });
@@ -979,7 +997,8 @@ namespace VTACheckClock.ViewModels
             try {
                 ToggleTimers(false); //Detiene los temporizadores para calcular el tiempo exacto hasta finalizar el registro
 
-                DateTime this_time = GetRemoteDateTime();
+                //DateTime this_time = GetRemoteDateTime();
+                DateTime this_time = calculatedTime;
                 TimeSpan run_time = GlobalVars.RunningTime.Elapsed;
                 DateTime calc_time = GlobalVars.StartTime.Add(run_time);
 
@@ -1007,10 +1026,12 @@ namespace VTACheckClock.ViewModels
                     {
                         await PlayBeep(4);
                         await UpdateInfoLabels(2);
+                        await UpdateNetworkTimeAsync(); // Reconsultar la hora del servidor
                         ToggleTimers(true); //Reanuda los temporizadores
 
                         return;
                     }
+
                     EmpPunches.Clear(); //Limpia el historial de registros del último colaborador
 
                     await PlayBeep(next_ev);
@@ -1066,8 +1087,11 @@ namespace VTACheckClock.ViewModels
                     await PlayBeep(3);
                     await UpdateInfoLabels(3);
                 }
+
+                await UpdateNetworkTimeAsync();
                 ToggleTimers(true); //Reanuda el temporizador esperando otro registro de asistencia.
             } catch (Exception exc) {
+                await UpdateNetworkTimeAsync();
                 ToggleTimers(true);
                 await ShowMessage("Error al procesar la huella", exc.Message);
             }
@@ -1355,7 +1379,10 @@ namespace VTACheckClock.ViewModels
         private void StartClock()
         {
             //new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Normal, TimerTick).Start();
-            tmrCachedTime.Interval = TimeSpan.FromSeconds(1);
+
+            tmrCachedTime = new DispatcherTimer {
+                Interval = TimeSpan.FromSeconds(1)
+            };
             tmrCachedTime.Tick += TmrCachedTime_Tick;
             tmrCachedTime.Start();
 
@@ -1368,15 +1395,46 @@ namespace VTACheckClock.ViewModels
         {
             // Obtener la hora del servidor NTP solo si no hay una hora en caché
             //if (GlobalVars.CachedTime == DateTime.MinValue) {
-                var data = await GetTimeNow();
-                GlobalVars.CachedTime = data.CurrentTime;
-            //} else {
-                // Calcular la siguiente hora sumando un segundo
-            //    GlobalVars.CachedTime = GlobalVars.CachedTime.AddSeconds(1);
+                //var data = await GetTimeNow();
+                //GlobalVars.CachedTime = data.CurrentTime;
             //}
 
-            // Mostrar o usar cachedTime en tu aplicación
-            //Debug.WriteLine("Hora calculada: " + GlobalVars.CachedTime);
+            // Avanzar la hora basada en la última sincronización con NTP
+            calculatedTime = calculatedTime.AddSeconds(1);
+            GlobalVars.CachedTime = calculatedTime;
+
+            // Verifica cada 5 minutos si hay una gran diferencia con la hora real
+            if ((DateTime.UtcNow - lastUpdateTime).TotalMinutes >= 5) {
+                await UpdateNetworkTimeAsync();
+            }
+
+            // Si la sincronización ha fallado por más de 1 hora, alerta al usuario
+            if (failedAttempts > 12)
+            {
+                log.Warn("Advertencia: No se ha podido sincronizar la hora en más de 1 hora.");
+            }
+        }
+
+        private async Task UpdateNetworkTimeAsync()
+        {
+            lastUpdateTime = DateTime.UtcNow;
+
+            var networkTime = await GetDateTime();
+            if (networkTime == DateTime.MinValue) // Si la consulta NTP falla
+            {
+                failedAttempts++;
+                return; // No cambia nada, sigue usando la última hora calculada
+            }
+
+            failedAttempts = 0; // Resetea los intentos fallidos
+            lastNetworkTime = networkTime;
+            networkOffset = lastNetworkTime - DateTime.UtcNow;
+
+            // Si la diferencia es mayor a 5 segundos, actualizar la hora inmediatamente
+            if (Math.Abs((lastNetworkTime - calculatedTime).TotalSeconds) > 5)
+            {
+                calculatedTime = lastNetworkTime;
+            }
         }
 
         /// <summary>
@@ -1466,7 +1524,7 @@ namespace VTACheckClock.ViewModels
             }
 
             await Task.Run(async () => {
-                await EmailSenderHandler.SendEmailAsync((string.IsNullOrEmpty(offName) ? offName + " - ": "") + "Control de Asistencia", body);
+                await EmailSenderHandler.SendEmailAsync((!string.IsNullOrEmpty(offName) ? offName + " - ": "") + "Control de Asistencia", body);
             });
         }
 
@@ -1706,8 +1764,15 @@ namespace VTACheckClock.ViewModels
             }
         }
 
+        private TimeSpan normalInterval = TimeSpan.FromSeconds(30);
+        private TimeSpan offlineInterval = TimeSpan.FromSeconds(5);
+        private bool lastConnectionState = true;
+
         /// <summary>
         /// Configura los intervalos para los temporizadores de la aplicación.
+        /// <para>1) Temporizador para intentos de sincronización de registros.</para>
+        /// <para>2) Temporizador para mostrar Avisos.</para>
+        /// <para>3) Temporizador para verificar la conexión a Internet.</para>
         /// </summary>
         private void ConfigTimers()
         {
@@ -1722,18 +1787,30 @@ namespace VTACheckClock.ViewModels
             tmrNotices.Tick += TmrNotices_Tick;
             tmrNotices.Start();
 
-            tmrCheckNetConnection.Interval = TimeSpan.FromMilliseconds(5000);
+            tmrCheckNetConnection.Interval = normalInterval;
             tmrCheckNetConnection.Tick += async (sender, e) => await ToggleConnIndicator();
             tmrCheckNetConnection.Start();
         }
 
+        /// <summary>
+        /// Actualiza el estado de la conexion a Internet en la Pantalla del Checador.
+        /// </summary>
+        /// <returns></returns>
         private async Task ToggleConnIndicator()
         {
+            bool isLocalNetworkAvailable = NetworkInterface.GetIsNetworkAvailable();
             var IsOnline = await CommonValids.ValidInternetConnAsync();
 
             NetworkConStatus = IsOnline ? "Conectado" : "Sin conexión";
             IsNetConnected = IsOnline;
             GlobalVars.BeOffline = !IsOnline;
+
+            // Ajustar el intervalo según el estado de la conexión
+            if (IsOnline != lastConnectionState)
+            {
+                tmrCheckNetConnection.Interval = IsOnline ? normalInterval : offlineInterval;
+                lastConnectionState = IsOnline;
+            }
         }
         #endregion
 
@@ -1851,7 +1928,8 @@ namespace VTACheckClock.ViewModels
                         txtlblName = emp_num + " - " + emp_nom;
                         txtlblEvent = EvTypes[la_punch.Punchevent] + " registrada a las " + la_punch.Punchtime.ToString("HH:mm:ss") + " horas.";
                         break;
-                    } catch {
+                    } catch(Exception ex) {
+                        log.Warn("Error al procesar datos de checada: ", ex.Message);
                         await UpdateInfoLabels(0);
                         return;
                     }

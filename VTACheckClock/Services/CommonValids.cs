@@ -188,7 +188,8 @@ namespace VTACheckClock.Services
             string[] nullableProperties = { 
                 "Employees_host", "Websocket_enabled", "Websocket_host", "Websocket_port", 
                 "Pusher_key", "Pusher_cluster", "Pusher_app_id", "Pusher_secret", "Event_name", 
-                "Ws_url", "Db_server", "Db_name", "Db_user", "Db_pass", "Logo"
+                "Ws_url", "Db_server", "Db_name", "Db_user", "Db_pass", "Logo", "mailEnabled",
+                "MailServer", "MailPort", "MailUser", "MailPass", "MailRecipient"
             };
 
             foreach (PropertyInfo la_prop in las_props)
@@ -367,10 +368,24 @@ namespace VTACheckClock.Services
         public static async Task<bool> ValidInternetConnAsync()
         {
             try {
-                PingReply reply = await new Ping().SendPingAsync("8.8.8.8", 1000);
-                //$"Tiempo de respuesta: {reply.RoundtripTime} ms";
+                // Intentar múltiples destinos por si alguno está bloqueado
+                string[] hosts = { "8.8.8.8", "1.1.1.1", "208.67.222.222" };
 
-                return reply.Status == IPStatus.Success;
+                foreach (var host in hosts)
+                {
+                    try {
+                        PingReply reply = await new Ping().SendPingAsync(host, 1000);
+                        //$"Tiempo de respuesta: {reply.RoundtripTime} ms";
+
+                        if (reply.Status == IPStatus.Success)
+                            return true;
+                    } catch {
+                        // Continuar con el siguiente host
+                        return false;
+                    }
+                }
+
+                return false;
             } catch {
                 return false;
             }

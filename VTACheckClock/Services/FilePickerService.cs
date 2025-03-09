@@ -14,6 +14,13 @@ namespace VTACheckClock.Services
 
     public class FilePickerService : IFilePickerService
     {
+        public static FilePickerFileType ImageAll { get; } = new("All Images")
+        {
+            Patterns = new[] { "*.png", "*.jpg", "*.jpeg", "*.gif", "*.bmp", "*.webp" },
+            AppleUniformTypeIdentifiers = new[] { "public.image" },
+            MimeTypes = new[] { "image/*" }
+        };
+
         public async Task<IStorageFile?> OpenFilePickerAsync()
         {
             var MainWindow = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
@@ -31,7 +38,11 @@ namespace VTACheckClock.Services
                 Title = "Seleccionar archivo de conexión",
                 AllowMultiple = false,
                 FileTypeFilter = new FilePickerFileType[] {
-                    new FilePickerFileType("Archivos Hash") { Patterns = new string[] {"*.hash" } }
+                    new("Archivos Hash") { 
+                        Patterns = new string[] {"*.hash" } 
+                    }
+                    //FilePickerFileTypes.ImageAll, 
+                    //FilePickerFileTypes.Pdf
                 }
             });
 

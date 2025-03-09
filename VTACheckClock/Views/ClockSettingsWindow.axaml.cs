@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -7,6 +8,8 @@ using ReactiveUI;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using VTACheckClock.Helpers;
 using VTACheckClock.ViewModels;
 
 namespace VTACheckClock.Views
@@ -45,6 +48,32 @@ namespace VTACheckClock.Views
                 ((ClockSettingsViewModel?)DataContext).txtClockUsr = txtClockUsr;
                 ((ClockSettingsViewModel?)DataContext).txtClockPass = txtClockPass;
             };
+
+            WindowHelper.CenterOnScreen(this);
+        }
+
+        private void ClockSettingsWindow_Opened(object? sender, EventArgs e)
+        {
+            var screens = Screens.All;
+
+            // Verifica si hay más de una pantalla
+            if (screens.Count > 1)
+            {
+                // Obtiene la segunda pantalla
+                var secondScreen = screens.ElementAt(1);
+
+                // Calcula la posición para centrar en la segunda pantalla
+                double left = secondScreen.Bounds.X + (secondScreen.Bounds.Width - this.Width) / 2;
+                double top = secondScreen.Bounds.Y + (secondScreen.Bounds.Height - this.Height) / 2;
+
+                // Establece la posición de la ventana
+                this.Position = new PixelPoint((int)left, (int)top);
+            }
+            else
+            {
+                // Si solo hay una pantalla, centra en ella
+                this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            }
         }
 
         public void closing()

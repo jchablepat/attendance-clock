@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using VTACheckClock.Helpers;
 
 namespace VTACheckClock.Views
 {
@@ -10,6 +11,8 @@ namespace VTACheckClock.Views
             btnCancel.Click += delegate {
                 Close();
             };
+
+            WindowHelper.CenterOnScreen(this);
         }
     }
 }

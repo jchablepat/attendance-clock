@@ -3,7 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-				Width="520" Height="700" CanResize="False"
+				Width="550" Height="700" CanResize="False"
         x:Class="VTACheckClock.Views.ClockSettingsWindow"
 				WindowStartupLocation="CenterOwner"
 				ExtendClientAreaToDecorationsHint="True"
@@ -78,12 +78,12 @@
 			<StackPanel Margin="10 0 10 0">
 				<DockPanel>
 					<TextBlock DockPanel.Dock="Left" Text="Ajustar la configuración del sistema:" FontWeight="Bold" FontSize="22" Margin="0 10 0 10" />
-					<Button Name="btnSaveSet" DockPanel.Dock="Right" HorizontalAlignment="Right" Content="Guardar" Background="Green" Foreground="White" Margin="0 2" Width="65" Command="{ Binding SaveSettingsCommand }" />
+					<Button Name="btnSaveSet" DockPanel.Dock="Right" HorizontalAlignment="Right" Content="Guardar" Background="Green" Foreground="White" Margin="0 2" Width="100" Command="{ Binding SaveSettingsCommand }" />
 				</DockPanel>
 				<ScrollViewer Height="610">
 					<StackPanel>
 						<StackPanel Background="White">
-							<TextBlock Text="Carpeta temporal:" FontSize="18" Margin="0 10 0 10" />
+							<TextBlock Text="Carpeta temporal:" FontSize="18" FontWeight="Bold" Margin="0 10 0 10" />
 							<StackPanel Background="White" Orientation="Horizontal">
 								<TextBlock Text="Ruta:" Padding="15 8 0 0" Width="60" />
 								<TextBox Name="txtPathTmp" Classes="DataValidationErrors" Text="{ Binding PathTmp }" Width="336" />
@@ -97,9 +97,9 @@
 						</StackPanel>
 
             <StackPanel Background="White">
-              <TextBlock Text="Logo:" FontSize="18" Margin="0 10 0 10" />
+              <TextBlock Text="Logo:" FontSize="18" FontWeight="Bold" Margin="0 10 0 10" />
               <StackPanel Background="White" Orientation="Horizontal">
-                <TextBlock Text="Ruta:" Padding="15 8 0 0" Width="60" />
+                <TextBlock Text="Ruta:" Padding="15 8 0 0" Width="80" />
                 <TextBox Name="txtLogoPath" Text ="{ Binding Logo }" Classes="DataValidationErrors" Width="336" IsEnabled="False" />
                 <Button Click="Button_Click" Name="btnChooseLogo" Height="33" ToolTip.Tip="">
 									<Image Source="/Assets/back_row.png" Height="25"/>
@@ -108,42 +108,42 @@
             </StackPanel>
 
 						<StackPanel Background="White">
-							<TextBlock Text="Conexión FTP:" FontSize="18" Margin="0 10 0 10" />
+							<TextBlock Text="Conexión FTP:" FontSize="18" FontWeight="Bold" Margin="0 10 0 10" />
 							<StackPanel Background="White" Orientation="Horizontal" Margin="0 0 0 10">
 								<TextBlock Text="Servidor:" Padding="0 6 0 0" Width="60" />
 								<TextBox Name="txtFTPServ" Text="{ Binding FTPServer }" Width="276" />
 								<TextBlock Text="Puerto:" Padding="15 6 0 0" Width="70"/>
-								<TextBox Name="txtFTPPort" Text="{ Binding FTPPort }" Width="40"/>
+								<TextBox Name="txtFTPPort" Text="{ Binding FTPPort }" Width="95"/>
 							</StackPanel>
 							<StackPanel Background="White" Orientation="Horizontal">
 								<TextBlock Text="Usuario:" Padding="0 6 0 0" Width="60" />
 								<TextBox Name="txtFTPUsr" Text="{ Binding FTPUsr }" Width="160" />
-								<TextBlock Text="Contraseña:" Padding="15 6 0 0" Width="90"/>
+								<TextBlock Text="Contraseña:" Padding="15 6 0 0" Width="120"/>
 								<TextBox Name="txtFTPPass" Text="{ Binding FTPPass }" PasswordChar="*" Width="160" FontSize="16" />
 							</StackPanel>
 						</StackPanel>
 
             <StackPanel Background="White">
-              <TextBlock Text="Web Service:" FontSize="18" Margin="0 10 0 10" />
+              <TextBlock Text="Web Service:" FontSize="18" FontWeight="Bold" Margin="0 10 0 10" />
               <StackPanel Background="White" Orientation="Horizontal" Margin="0 0 0 10">
                 <TextBlock Text="Servidor:" Padding="0 6 0 0" Width="60" />
                 <TextBox Name="txtDBServer" Text="{ Binding DBServer }" Width="160" />
-                <TextBlock Text="Base de Datos:" Padding="15 6 0 0" Width="90"/>
+                <TextBlock Text="Base de Datos:" Padding="15 6 0 0" Width="120"/>
                 <TextBox Name="txtDBName" Text="{ Binding Database }" Width="160"/>
               </StackPanel>
               <StackPanel Background="White" Orientation="Horizontal">
                 <TextBlock Text="Usuario:" Padding="0 6 0 0" Width="60" />
                 <TextBox Name="txtDBUser" Text="{ Binding DBUser }" Width="160" />
-                <TextBlock Text="Contraseña:" Padding="15 6 0 0" Width="90"/>
+                <TextBlock Text="Contraseña:" Padding="15 6 0 0" Width="120"/>
                 <TextBox Name="txtDBPass" Text="{ Binding DBPassword }" PasswordChar="*" Width="160" FontSize="16" />
               </StackPanel>
             </StackPanel>
 
 						<StackPanel Background="White">
-							<TextBlock Text="Opciones del Reloj:" FontSize="18" Margin="0 10 0 10" />
+							<TextBlock Text="Opciones del Reloj:" FontSize="18" FontWeight="Bold" Margin="0 10 0 10" />
 							<StackPanel Background="White" Orientation="Horizontal" Margin="0 0 0 10">
 								<TextBlock Text="Oficina:" Padding="0 6 0 0" Width="60"/>
-								<ComboBox Name="cmbOff" PlaceholderText="Seleccione una oficina" Width="410" Height="32" x:Name="cmbOffices" ItemsSource="{Binding Offices}" SelectedIndex="{ Binding SelectedOffice }">
+								<ComboBox Name="cmbOff" PlaceholderText="Seleccione una oficina" Width="440" Height="32" x:Name="cmbOffices" ItemsSource="{Binding Offices}" SelectedIndex="{ Binding SelectedOffice }">
 									<ComboBox.ItemTemplate>
 										<DataTemplate>
 											<TextBlock Text="{Binding Offname}"/>
@@ -154,12 +154,12 @@
 							<StackPanel Background="White" Orientation="Horizontal" Margin="0 0 0 10">
 								<TextBlock Text="Usuario:" Padding="0 6 0 0" Width="60"/>
 								<TextBox Name="txtClockUsr" Text="{ Binding ClockUsr }" Width="160" />
-								<TextBlock Text="Contraseña:" Padding="15 6 0 0" Width="90"/>
+								<TextBlock Text="Contraseña:" Padding="15 6 0 0" Width="120"/>
 								<TextBox Name="txtClockPass" Text="{ Binding ClockPass }" PasswordChar="*" Width="160" FontSize="16" />
 							</StackPanel>
 							<StackPanel Background="White" Orientation="Horizontal">
-								<TextBlock Text="Zona horaria:" Padding="0 6 0 0" Width="80"/>
-								<ComboBox PlaceholderText="Elija un horario(opcional)" Width="390" Height="32" x:Name="cmbTimeZones" ItemsSource="{Binding TimeZones}" SelectedIndex="{ Binding SelectedTimeZone }">
+								<TextBlock Text="Zona horaria:" Padding="0 6 0 0" Width="90"/>
+								<ComboBox PlaceholderText="Elija un horario(opcional)" Width="410" Height="32" x:Name="cmbTimeZones" ItemsSource="{Binding TimeZones}" SelectedIndex="{ Binding SelectedTimeZone }">
 									<ComboBox.ItemTemplate>
 										<DataTemplate>
 											<TextBlock Text="{Binding el_text}"/>
@@ -178,10 +178,10 @@
 						</StackPanel>
 
 						<StackPanel Background="White" Margin="0 15 0 0">
-							<TextBlock Text="Servidor de WebSockets:" FontSize="18" />
+							<TextBlock Text="Servidor de WebSockets:" FontSize="18" FontWeight="Bold" />
 							<StackPanel Background="White" Orientation="Horizontal" Margin="0 10 0 10">
-								<TextBlock Text="Emp Host:" Padding="25 6 0 0" Width="90" />
-								<TextBox Text="{ Binding EmployeesHost }" Width="380" Watermark="P.E: https://organiwork.com" ToolTip.Tip="Dominio del Sistema de empleados, Organiwork."/>
+								<TextBlock Text="Emp Host:" Padding="25 6 0 0" Width="100" />
+								<TextBox Text="{ Binding EmployeesHost }" Width="400" Watermark="P.E: https://organiwork.com" ToolTip.Tip="Dominio del Sistema de empleados, Organiwork."/>
 							</StackPanel>
 							<StackPanel Background="White" Orientation="Horizontal" HorizontalAlignment="Center">
 								<!--<CheckBox IsChecked="{ Binding WebSocketEnabled }">Habilitar conexión</CheckBox>-->
@@ -189,7 +189,7 @@
 							</StackPanel>
 							<StackPanel Background="White" Orientation="Horizontal" Margin="0 6 0 10">
 								<TextBlock Text="Server Host:" Padding="10 6 0 0" Width="90" />
-								<TextBox Text="{ Binding WSHost }" Width="250" />
+								<TextBox Text="{ Binding WSHost }" Width="270" />
 
                 <TextBlock Text="Puerto:" Padding="15 6 12 0" />
                 <TextBox Name="txtWSPort" Text="{ Binding WSPort }" Width="60" ToolTip.Tip="Puerto del servidor WebSocket"/>
@@ -200,12 +200,12 @@
                 <TextBox Text="{ Binding PusherAppId }" Width="120" />
                 
 								<TextBlock Text="Pusher Key:" Padding="10 6 0 0" Margin="0,0,7,0" Width="90"/>
-								<TextBox Text="{ Binding PusherKey }" Width="170" />
+								<TextBox Text="{ Binding PusherKey }" Width="190" />
 							</StackPanel>
 
 							<StackPanel Background="White" Orientation="Horizontal" Margin="0 0 0 10">
                 <TextBlock Text="Secret Key:" Padding="10 6 0 0" Width="90"/>
-                <TextBox Text="{ Binding PusherSecret }" Width="210" />
+                <TextBox Text="{ Binding PusherSecret }" Width="230" />
                 
 								<TextBlock Text="Pusher Cluster:" Width="95" Padding="0 6 0 0" Margin="11 0 7 0" />
 								<TextBox Text="{ Binding PusherCluster }" Width="60" />
@@ -213,9 +213,34 @@
 
 							<StackPanel Background="White" Orientation="Horizontal">
 								<TextBlock Text="Evento:" Padding="40 6 0 0" Width="90" />
-								<TextBox Text="{ Binding EventName }" Width="387" Watermark="my-event" />
+								<TextBox Text="{ Binding EventName }" Width="408" Watermark="my-event" />
 							</StackPanel>
 						</StackPanel>
+
+            <HeaderedContentControl Header="Envio de correo" Margin="0 15 0 0">
+              <StackPanel Spacing="8">
+                <StackPanel Background="White" Orientation="Horizontal" HorizontalAlignment="Center">
+                  <ToggleSwitch IsChecked="{Binding MailEnabled}" Content="Habilitar envíos" OnContent="Habilitado" OffContent="Deshabilitado" />
+                </StackPanel>
+                
+                <StackPanel Background="White" Orientation="Horizontal" Margin="0 0 0 10">
+                  <TextBlock Text="Host:" Padding="0 6 0 0" Width="60" />
+                  <TextBox Text="{ Binding MailServer }" Width="275" Watermark="smtp.gmail.com" />
+                  <TextBlock Text="Puerto:" Padding="15 6 0 0" Width="90"/>
+                  <TextBox Text="{ Binding MailPort }" Width="60" Watermark="587" />
+                </StackPanel>
+                <StackPanel Background="White" Orientation="Horizontal">
+                  <TextBlock Text="Usuario:" Padding="0 6 0 0" Width="60" />
+                  <TextBox Text="{ Binding MailUser }" Width="160" Watermark="name@gmail.com" />
+                  <TextBlock Text="Contraseña:" Padding="15 6 0 0" Width="90"/>
+                  <TextBox Text="{ Binding MailPass }" PasswordChar="*" Width="160" FontSize="16" Watermark="****" />
+                </StackPanel>
+                <StackPanel Background="White" Orientation="Horizontal" HorizontalAlignment="Left">
+                  <TextBlock Text="Destinatario:" Padding="15 6 0 0" Width="110"/>
+                  <TextBox Text="{ Binding MailRecipient }" Width="260" FontSize="16" Watermark="address@gmail.com" />
+                </StackPanel>
+              </StackPanel>
+            </HeaderedContentControl>
 					</StackPanel>
 				</ScrollViewer>
 			</StackPanel>

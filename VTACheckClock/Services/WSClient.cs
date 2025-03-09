@@ -1,21 +1,19 @@
 ﻿using Avalonia.Threading;
+using DocumentFormat.OpenXml.Wordprocessing;
 using Newtonsoft.Json;
 using NLog;
 using PusherClient;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using VTACheckClock.Models;
 using VTACheckClock.Services;
-using VTACheckClock.ViewModels;
+using VTACheckClock.Services.Libs;
 using VTACheckClock.Views;
 
 namespace VTA_Clock
@@ -39,6 +37,10 @@ namespace VTA_Clock
         private static DateTime? _NewDisconnectTime;
         private static bool ForceReconnecting;
         private readonly WSServer _WSServer = new();
+        /// <summary>
+        /// Cola de mensajes pendientes por enviar.
+        /// </summary>
+        private readonly ConcurrentQueue<PunchRecord> PendingMessages = new();
 
         public WSClient()
         {
@@ -121,11 +123,12 @@ namespace VTA_Clock
                     // Create Pusher client ready to subscribe to public, private and presence channels
                     ///////////Use "Authorizer" parameter, to connect only private and presence channels.
                     //log.Info($"Authenticating client from url {host}/broadcasting/auth");
+                    var seconds = GlobalVars.BeOffline ? 60 : 120;
 
                     _Pusher = new Pusher(appKey, new PusherOptions {
                         Cluster = pusher_cluster,
                         Encrypted = true,
-                        ClientTimeout = TimeSpan.FromSeconds(60)
+                        ClientTimeout = TimeSpan.FromSeconds(seconds)
                     });
                     ///************** Add event handlers **************/
                     _Pusher.ConnectionStateChanged += Pusher_ConnectionStateChanged;
@@ -161,11 +164,11 @@ namespace VTA_Clock
             }
         }
 
-        public void Pusher_ConnectionStateChanged(object sender, ConnectionState state)
+        public async void Pusher_ConnectionStateChanged(object sender, ConnectionState state)
         {
-            if (!RetryReconnection()) {
-                return;
-            }
+            //if (!RetryReconnection()) {
+            //    return;
+            //}
 
             switch(state)
             {
@@ -184,6 +187,8 @@ namespace VTA_Clock
                 case ConnectionState.Connected:
                     log.Info("Pusher Service is connected with ID: " + ((Pusher)sender).SocketID);
                     ForceReconnecting = false;
+
+                    await SendPendingMessagesAsync();
                     break;
                 default:
                     log.Info("Connection state is '" + state.ToString() + "' from thread: " + Environment.CurrentManagedThreadId);
@@ -195,9 +200,9 @@ namespace VTA_Clock
         {
             if ((int)error.PusherCode < 5000)
             {
-                if(error.PusherCode == ErrorCodes.ConnectionNotAuthorizedWithinTimeout && !RetryReconnection()) {
-                    return;
-                }
+                //if(error.PusherCode == ErrorCodes.ConnectionNotAuthorizedWithinTimeout && !RetryReconnection()) {
+                //    return;
+                //}
 
                 // Error received from Pusher cluster, use PusherCode to filter.
                 log.Warn("Pusher error ocurred: " + error.Message);
@@ -253,14 +258,14 @@ namespace VTA_Clock
 
         private static bool RetryReconnection()
         {
-            var retry = ForceReconnecting || DisconnectedElapsed == 0 || DisconnectedElapsed >= 60;
+            var retry = ForceReconnecting; // || DisconnectedElapsed == 0 || DisconnectedElapsed >= 60;
             return retry;
         }
 
         private void SubscribedHandler(object? sender, Channel? channel)
         {
             try {
-                if (!RetryReconnection()) return;
+                //if (!RetryReconnection()) return;
 
                 //if (channel is GenericPresenceChannel<Office>) {
                     log.Info("Binding channel events.......");
@@ -365,24 +370,56 @@ namespace VTA_Clock
                     }
                 });
 
-                if (IsPusherConnected()) {
-                    //IMPORTANT!!!! The event name for client events must start with 'client-' and are only supported on private(non-encrypted) and presence channels.
-                    //_TimeClockChannel.TriggerAsync("client-punch-record", new { message = "Este es un mensaje de Prueba." });
-                    Dispatcher.UIThread.InvokeAsync(async () => {
-                        await _WSServer.TriggerEventAsync("checkclock-offices." + c_settings?.clock_office, "my-event", new PunchRecord {
-                            IdEmployee = new_punch.Punchemp, EmployeeFullName = emp.empnom,
-                            EventTime = new_punch.Punchtime.ToString("yyyy/MM/dd HH:mm:ss"),
-                            InternalEventTime = new_punch.Punchinternaltime.ToString("yyyy/MM/dd HH:mm:ss"),
-                            IdEvent = new_punch.Punchevent, EventName = CommonObjs.EvTypes[new_punch.Punchevent]
-                        });
-                    });
-                }
+                Dispatcher.UIThread.InvokeAsync(async () => {
+                    var punch = new PunchRecord {
+                        IdEmployee = new_punch.Punchemp, EmployeeFullName = emp.empnom,
+                        EventTime = new_punch.Punchtime.ToString("yyyy/MM/dd HH:mm:ss"),
+                        InternalEventTime = new_punch.Punchinternaltime.ToString("yyyy/MM/dd HH:mm:ss"),
+                        IdEvent = new_punch.Punchevent, EventName = CommonObjs.EvTypes[new_punch.Punchevent]
+                    };
+
+                    await SendMessageAsync(punch);
+                });
 
                 return true;
             }
             catch (Exception ex) {
                log.Error(new Exception(), "Error while triggering employee assistance: " + ex);
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// Reenvía los mensajes en cola, cuando la conexión se restablece
+        /// </summary>
+        /// <returns></returns>
+        private async Task SendPendingMessagesAsync()
+        {
+            while (PendingMessages.TryDequeue(out PunchRecord? pendingPunch)) {
+                await SendMessageAsync(pendingPunch);
+            }
+        }
+
+        /// <summary>
+        /// Intenta enviar un mensaje, si la conexión falla, lo almacena en la cola.
+        /// </summary>
+        /// <param name="punch"></param>
+        /// <returns></returns>
+        private async Task SendMessageAsync(PunchRecord punch)
+        {
+            if (IsPusherConnected()) {
+                try {
+                    //IMPORTANT!!!! The event name for client events must start with 'client-' and are only supported on private(non-encrypted) and presence channels.
+                    //_TimeClockChannel.TriggerAsync("client-punch-record", new { message = "Este es un mensaje de Prueba." });
+
+                    await _WSServer.TriggerEventAsync("checkclock-offices." + c_settings?.clock_office, m_settings.Event_name!, punch);
+                } catch (Exception ex) {
+                    log.Warn("Error enviando mensaje: " + ex.Message);
+                    PendingMessages.Enqueue(punch);
+                }
+            } else {
+                log.Warn("Conexión no disponible, almacenando mensaje...");
+                PendingMessages.Enqueue(punch);
             }
         }
 

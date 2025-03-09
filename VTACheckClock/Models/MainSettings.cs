@@ -22,5 +22,11 @@
         public string? Pusher_secret { get; set; }
         public string? Pusher_cluster { get; set; }
         public string? Event_name { get; set; }
+        public bool MailEnabled { get; set; }
+        public string? MailServer { get; set; }
+        public string? MailPort { get; set; }
+        public string? MailUser { get; set; }
+        public string? MailPass { get; set; }
+        public string? MailRecipient { get; set; }
     }
 }

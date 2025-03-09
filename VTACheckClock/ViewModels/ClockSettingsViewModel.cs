@@ -23,9 +23,13 @@ namespace VTACheckClock.ViewModels
     /*public*/ class ClockSettingsViewModel : ViewModelBase
     {
         private string? _pathTmp = "", _logo = "", _ftpServe = "", _ftpPort = "", _ftpUser = "", _ftpPass = "",
-            _server = "", _database = "", _dbUser = "", _dbPass = "", _clockUsr = "", _clockPass = "", 
-            _emp_host = "" , _wsHost = "", _wsPort = "", _pusherAppId = "", _pusherKey = "", _pusherSecret = "",
+            _server = "", _database = "", _dbUser = "", _dbPass = "", _clockUsr = "", _clockPass = "",
+            _emp_host = "", _wsHost = "", _wsPort = "", _pusherAppId = "", _pusherKey = "", _pusherSecret = "",
             _pusherCluster = "", _eventName = "", _clockUUID = "";
+
+        private string?  _mailServer = "", _mailPort = "", _mailSender = "", _mailPass = "", _mailRecipient = "";
+        private bool _mailEnabled = false;
+
         private int _selOffice = -1, _selTZ = -1;
         private bool _uuid = false, _websocket_enabled = false;
         public TextBox? txtPathTmp { get; set; }
@@ -312,6 +316,42 @@ namespace VTACheckClock.ViewModels
             set => this.RaiseAndSetIfChanged(ref _selTZ, value);
         }
 
+        public bool MailEnabled
+        {
+            get => _mailEnabled;
+            set => this.RaiseAndSetIfChanged(ref _mailEnabled, value);
+        }
+
+        public string? MailServer
+        {
+            get => _mailServer;
+            set => this.RaiseAndSetIfChanged(ref _mailServer, value);
+        }
+
+        public string? MailPort
+        {
+            get => _mailPort;
+            set => this.RaiseAndSetIfChanged(ref _mailPort, value);
+        }
+
+        public string? MailUser
+        {
+            get => _mailSender;
+            set => this.RaiseAndSetIfChanged(ref _mailSender, value);
+        }
+
+        public string? MailPass
+        {
+            get => _mailPass;
+            set => this.RaiseAndSetIfChanged(ref _mailPass, value);
+        }
+
+        public string? MailRecipient
+        {
+            get => _mailRecipient;
+            set => this.RaiseAndSetIfChanged(ref _mailRecipient, value);
+        }
+
         public ObservableCollection<OfficeData> Offices { get; } = new();
         public ObservableCollection<TimeZoneList> TimeZones { get; } = new();
         public ReactiveCommand<Unit, Unit> SetDefPathCommand { get; }
@@ -394,6 +434,12 @@ namespace VTACheckClock.ViewModels
                 PusherSecret = m_settings.Pusher_secret ?? string.Empty;
                 PusherCluster = m_settings.Pusher_cluster ?? string.Empty;
                 EventName = m_settings.Event_name ?? string.Empty;
+                MailEnabled = m_settings.MailEnabled;
+                MailServer = m_settings.MailServer ?? string.Empty;
+                MailPort = m_settings.MailPort ?? string.Empty;
+                MailUser = m_settings?.MailUser ?? string.Empty;
+                MailPass = m_settings.MailPass ?? string.Empty;
+                MailRecipient = m_settings.MailRecipient ?? string.Empty;
             } catch(Exception ex) {
                 Console.WriteLine(ex);
             }
@@ -623,7 +669,13 @@ namespace VTACheckClock.ViewModels
                 Pusher_key = PusherKey,
                 Pusher_secret = PusherSecret,
                 Pusher_cluster = PusherCluster,
-                Event_name = EventName
+                Event_name = EventName,
+                MailEnabled = MailEnabled,
+                MailServer = MailServer,
+                MailPort = MailPort,
+                MailUser = MailUser,
+                MailPass = MailPass,
+                MailRecipient = MailRecipient
             };
 
             if (GlobalVars.VTAttModule == 1)

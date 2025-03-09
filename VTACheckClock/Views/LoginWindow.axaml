@@ -29,8 +29,8 @@
 			<Setter Property="BorderThickness" Value="0"/>
 		</Style>
 	</Window.Styles>
-	<Border CornerRadius="2" BorderBrush="Purple" BorderThickness="1" ClipToBounds="True">
-		<StackPanel Background="White" Margin="8 0 8 0">
+	<Border CornerRadius="2" BorderThickness="1" ClipToBounds="True">
+		<StackPanel Margin="8 0 8 0">
 			<TextBlock Text="Favor de iniciar sesión" FontSize="20" FontWeight="Bold" TextAlignment="Center" Margin="10" />
 			<DockPanel Margin="0 0 0 15">
 				<TextBlock DockPanel.Dock="Left" Text="Usuario:" FontSize="18" VerticalAlignment="Center" />

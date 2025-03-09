@@ -18,6 +18,8 @@ namespace VTACheckClock
                 BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
             } catch (Exception ex) {
                 log.Error(new Exception(), $"Error al cargar la App: {ex.InnerException}");
+            } finally { 
+            
             }
         }
 

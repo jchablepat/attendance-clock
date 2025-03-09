@@ -147,7 +147,7 @@ namespace VTACheckClock.Views
                 //}
                 var MainWindow = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
                 var windows = MainWindow?.OwnedWindows;
-                if (windows?.Count > 0) {
+                if (windows?.Count > 0 && windows[0].IsVisible) {
                     await alert.ShowWindowDialogAsync(windows[0]);
                 } else {
                     await alert.ShowWindowDialogAsync(MainWindow);

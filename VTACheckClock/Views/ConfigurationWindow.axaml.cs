@@ -1,7 +1,9 @@
 using Avalonia.Controls;
 using Avalonia.ReactiveUI;
 using ReactiveUI;
+using System;
 using System.Threading.Tasks;
+using VTACheckClock.Helpers;
 using VTACheckClock.ViewModels;
 
 namespace VTACheckClock.Views
@@ -16,6 +18,20 @@ namespace VTACheckClock.Views
             };
             this.WhenActivated(d => d(ViewModel!.ShowDBDialog.RegisterHandler(DoShowDialogAsync)));
             this.WhenActivated(d => d(ViewModel!.ShowLoginDialog.RegisterHandler(DoShowDialogAsync)));
+
+            PropertyChanged += ConfigurationWindow_PropertyChanged;
+        }
+
+        private void ConfigurationWindow_PropertyChanged(object? sender, Avalonia.AvaloniaPropertyChangedEventArgs e)
+        {
+            if (e.Property == HeightProperty) {
+                WindowHelper.CenterOnScreen(this);
+            }
+
+            if (e.Property == WidthProperty)
+            {
+                WindowHelper.CenterOnScreen(this);
+            }
         }
 
         private async Task DoShowDialogAsync(InteractionContext<DatabaseConnectionViewModel, bool> interaction)
