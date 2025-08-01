@@ -41,7 +41,7 @@ namespace VTACheckClock.Views
         public static Task<MessageBoxResult>? Show(Window? parent, string title, string text, MessageBoxButtons buttons)
         {
             try {
-                Bitmap bitmap = new Bitmap(AssetLoader.Open(
+                Bitmap bitmap = new(AssetLoader.Open(
                      new Uri($"avares://{Assembly.GetExecutingAssembly().GetName().Name}/Assets/question.png"))
                 );
 
@@ -150,7 +150,7 @@ namespace VTACheckClock.Views
                 if (windows?.Count > 0 && windows[0].IsVisible) {
                     await alert.ShowWindowDialogAsync(windows[0]);
                 } else {
-                    await alert.ShowWindowDialogAsync(MainWindow);
+                    await alert.ShowWindowDialogAsync(MainWindow!);
                 }
             } catch(Exception exc) {
                 Debug.WriteLine(exc);
@@ -184,7 +184,7 @@ namespace VTACheckClock.Views
             if (windows?.Count > 0) {
                return await prompt.ShowWindowDialogAsync(windows[0]);
             } else {
-               return await prompt.ShowWindowDialogAsync(MainWindow);
+               return await prompt.ShowWindowDialogAsync(MainWindow!);
             }
         }
     }

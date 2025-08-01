@@ -1,8 +1,6 @@
-﻿using Avalonia;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using VTACheckClock.Models;
 
 namespace VTACheckClock.Services.Libs
@@ -38,15 +36,26 @@ namespace VTACheckClock.Services.Libs
         public static bool DoReinstall = false;
         public static bool SyncRetryPending = false;
         public static DateTime CachedTime = DateTime.MinValue;
+        /// <summary>
+        /// Represents the start time of an operation or event.
+        /// </summary>
+        /// <remarks>This field is static and can be used to store or retrieve the shared start time
+        /// across all instances of the containing type. Ensure that the value is properly initialized before accessing
+        /// it.</remarks>
         public static DateTime StartTime;
         public static ClockSettings? clockSettings;
         public static MainSettings? mainSettings;
-        public static SessionData? mySession;
-        public static SessionData? clockSession;
+        public static SessionData? mySession = new();
+        public static SessionData? clockSession = new();
         public static OfficeData? this_office;
         public static List<ParamData>? sysParams;
         public static CacheMan? AppCache;
+        /// <summary>
+        /// Global stopwatch to track the running time of the application. Its value is set at the start of the application and can be used to measure elapsed time.
+        /// Its value is reset when the application is restarted. And it is used to calculate the total running time of the application.
+        /// </summary>
         public static Stopwatch RunningTime = new();
         public static string? TimeZone;
+        public static string SERVER_SECRET_KEY = "b2c0f28e80e5c7f8119a8ec128a6478dde7604928620af9eef8f3eb7d22b4bbc";
     }
 }

@@ -9,7 +9,7 @@ namespace VTACheckClock.Models
     /// <summary>
     /// Clase para encapsular la información de las huellas dactilares (FMD's).
     /// </summary>
-    class FMDItem
+    public class FMDItem
     {
         public int idx { get; set; }
         public int offid { get; set; }

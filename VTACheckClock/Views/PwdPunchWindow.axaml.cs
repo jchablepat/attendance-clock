@@ -7,6 +7,7 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using VTACheckClock.Helpers;
 using VTACheckClock.Services;
 using VTACheckClock.ViewModels;
 
@@ -36,6 +37,8 @@ namespace VTACheckClock.Views
             Activated += (sender, e) => {
                 txtEmpID.Focus();
             };
+
+            WindowHelper.CenterOnScreen(this);
         }
 
         private void OnWindowClosing(object sender, WindowClosingEventArgs e) {

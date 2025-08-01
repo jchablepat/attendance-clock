@@ -76,7 +76,7 @@ namespace VTACheckClock.Views
             }
         }
         
-        private async Task ShowSettingsDialogAsync(InteractionContext<ClockSettingsViewModel, bool> interaction)
+        private async Task ShowSettingsDialogAsync(IInteractionContext<ClockSettingsViewModel, bool> interaction)
         {
             var dialog = new ClockSettingsWindow {
                 DataContext = interaction.Input

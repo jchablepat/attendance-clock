@@ -1,6 +1,6 @@
 ﻿namespace VTACheckClock.Models
 {
-    class ClockSettings
+    public class ClockSettings
     {
         public string? clock_user { get; set; }
         public string? clock_pass { get; set; }

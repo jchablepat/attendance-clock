@@ -15,6 +15,7 @@ namespace VTACheckClock.Views
             InitializeComponent();
             this.FindControl<Button>("btnCancel").Click += delegate {
                 Close();
+                Messenger.Send("TogglePanel", false);
             };
             this.WhenActivated(d => d(ViewModel!.ShowDBDialog.RegisterHandler(DoShowDialogAsync)));
             this.WhenActivated(d => d(ViewModel!.ShowLoginDialog.RegisterHandler(DoShowDialogAsync)));
@@ -34,7 +35,7 @@ namespace VTACheckClock.Views
             }
         }
 
-        private async Task DoShowDialogAsync(InteractionContext<DatabaseConnectionViewModel, bool> interaction)
+        private async Task DoShowDialogAsync(IInteractionContext<DatabaseConnectionViewModel, bool> interaction)
         {
             var dialog = new DatabaseConnectionWindow {
                 DataContext = interaction.Input
@@ -46,7 +47,7 @@ namespace VTACheckClock.Views
             if (result) ((ConfigurationViewModel?)DataContext).NextStep = 2;
         }
 
-        private async Task DoShowDialogAsync(InteractionContext<LoginViewModel, bool> interaction)
+        private async Task DoShowDialogAsync(IInteractionContext<LoginViewModel, bool> interaction)
         {
             var dialog = new LoginWindow {
                 DataContext = interaction.Input

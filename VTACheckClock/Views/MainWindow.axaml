@@ -48,144 +48,155 @@
     <!--<TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>-->
 <!--End default template code-->
 	<!--<views:CheckClockMainView />-->
-	<Grid RowDefinitions="*, Auto">
-		<Grid Grid.Row="0" ColumnDefinitions="*, *, *">
-			<DockPanel Grid.Column="0" Background="White" LastChildFill="True">
-        <!-- Panel 1: Logo -->
-				<Panel DockPanel.Dock="Top" Height="100" Background="#f0f0f0">
-					<Image Source="{ Binding LogoImage }" Height="100" MaxWidth="300" Margin="0" Stretch="Uniform"/> <!--^ character tell Avalonia that this is an asynchronous binding -->
-        </Panel>
-
-        <!-- Panel 2: Búsqueda de empleados -->
-        <Panel DockPanel.Dock="Top">
-          <TextBox Height="30" Name="txtSearchEmployeePunch" Text="{Binding SearchText}" Watermark="Buscar empleado..." ToolTip.Tip="Cualquier filtro" Padding="4 5 35 3" />
-          <Button HorizontalAlignment="Right" Click="Button_Click" Name="btnClearFilter" ToolTip.Tip="Limpiar filtro" Height="26" Width="30" BorderThickness="1 0 1 1" Margin="0 0 1 0">
-            <PathIcon Data="{StaticResource clear_formatting_regular}" Foreground="Red" />
-          </Button>
-        </Panel>
-        
-        <!-- Panel 3: DataGrid (Ocupará  el espacio restante) -->
-				<Panel>
-					<!--<ScrollViewer Name="dgScrollViewer">-->
-					<DataGrid IsVisible="True" x:Name="dgAttsList" Name="dgAttsList" ItemsSource="{Binding SearchResults}" AutoGenerateColumns="False" CanUserSortColumns="False" SelectedIndex="{ Binding SelectedIndex }" VerticalScrollBarVisibility="Auto" Classes="main-grid">
-							<DataGrid.Columns>
-                <DataGridTextColumn Header="No." Binding="{Binding EmpNo}" Width="40" IsReadOnly="true" />
-                <DataGridTemplateColumn Header="Colaborador" Width="2*">
-                  <DataGridTemplateColumn.CellTemplate>
-                    <DataTemplate>
-                      <TextBlock Text="{Binding FullName}" TextTrimming="CharacterEllipsis" ToolTip.ShowDelay="10" VerticalAlignment="Center" Padding="8 0">
-                        <ToolTip.Tip>
-                          <TextBlock Text="{Binding FullName}" Foreground="Black" />
-                        </ToolTip.Tip>
-                      </TextBlock>
-                    </DataTemplate>
-                  </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-								<DataGridTextColumn Header="Hora" Binding="{Binding EventTime}" Width="1.8*" IsReadOnly="true"/>
-								<DataGridTextColumn Header="Evento" Binding="{Binding EventType}" Width="1.1*" IsReadOnly="true" />
-							</DataGrid.Columns>
-					</DataGrid>
-					<!--</ScrollViewer>-->
-				</Panel>
-			</DockPanel>
-
-			<Grid Grid.Column="1" Background="#d3d3d3" Name="gridCenter">
-				<Grid RowDefinitions="Auto, Auto, *" ColumnDefinitions="*">
-					<TextBlock x:Name="lblTimer" Grid.Row="0" Grid.Column="0" Height="120" Background="#f0f0f0" Text="{Binding CurrentTime}" TextAlignment="Center" FontSize="100" FontWeight="Bold" Padding="0 1 0 0"></TextBlock>
-					<StackPanel Grid.Row="1" Grid.Column="0" Height="120" Background="#ffffff">
-						<TextBlock Height="80" Name="lblEmpName" Text="{ Binding EmployeeName }" Foreground="#191979" FontWeight="Bold" FontSize="20" TextWrapping="Wrap" TextAlignment="Center" Margin="6 0" Padding="0 20 0 0" />
-						<TextBlock Height="40" Name="lblEmpEvent" Text="{ Binding EmployeeEvent }" Foreground="#a02213" FontWeight="Bold" FontSize="18" TextAlignment="Center" Padding="0 6 0 0" />
-					</StackPanel>
-					<Panel Grid.Row="2" Grid.Column="0">
-						<Grid RowDefinitions="*, Auto" ColumnDefinitions="*">
-							<Grid Grid.Row="0" Grid.Column="0">
-								<DataGrid Name="dgEmpPunches" Classes="dg-employee" ItemsSource="{Binding EmpPunches}" AutoGenerateColumns="False" CanUserSortColumns="False" SelectedIndex="{ Binding LastEmployeeEventItem }">
-									<DataGrid.Columns>
-										<DataGridTextColumn Header="Día" Binding="{Binding punchdate}" IsReadOnly="true" />
-										<DataGridTextColumn Header="Hora" Binding="{Binding punchtime}" Width="1*" IsReadOnly="true"  />
-										<DataGridTextColumn Header="Evento" Binding="{Binding punchevent}" Width="1*" IsReadOnly="true" />
-									</DataGrid.Columns>
-								</DataGrid>
-							</Grid>
-							<Grid Grid.Row="1" Grid.Column="0" Height="60">
-								<Panel Background="#f0f0f0">
-									<StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="2 0 0 0">
-										<Button Height="50" Command="{ Binding $parent[Window].DataContext.LogOutCommand }" ToolTip.Tip="Salir">
-											<Image Source="/Assets/btnExit.png" Height="40" />
-										</Button>
-										<Button Height="50" Command="{ Binding $parent[Window].DataContext.PreviewLoggerCommand }" ToolTip.Tip="Log de comunicación WebSocket">
-											<Image Source="/Assets/websocket.jpg" Height="40"/>
-										</Button>
-									</StackPanel>
-									<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0 0 2 0">
-										<Button Name="btnSync" Margin="2 0" Width="50" Height="50" Command="{ Binding SyncEvtCommand }" ToolTip.Tip="Sincronización...">
-											<Image Source="/Assets/btnSync.png" Height="40"/>
-										</Button>
-										<Button Width="50" Height="50" Command="{ Binding $parent[Window].DataContext.LoginCommand }" ToolTip.Tip="Opciones de configuración...">
-											<Image Source="/Assets/btnSettings.png" Height="40"/>
-										</Button>
-                    <!--Just for testing purpose-->
-                    <Button IsVisible="False" Width="50" Margin="2 0" Height="50" ToolTip.Tip="Send employees with no check-in or check-out by email." Command="{ Binding SendEmailCommand }">
-                      <PathIcon Data="{StaticResource send_regular}" Foreground="Purple" />
-                    </Button>
-                    <Button IsVisible="False" Width="50" Margin="2 0" Height="50" ToolTip.Tip="Asistencia de empleados" Command="{ Binding PreviewAttendanceReportCommand }">
-                       <PathIcon Data="{StaticResource document_search_regular}" Foreground="Purple" />
-                    </Button>
-                  </StackPanel>
-								</Panel>
-							</Grid>
-						</Grid>
+  <Panel>
+    <!-- Contenido normal de la ventana -->
+		<Grid x:Name="MainContent" RowDefinitions="*, Auto">
+			<Grid Grid.Row="0" ColumnDefinitions="*, *, *">
+				<DockPanel Grid.Column="0" Background="White" LastChildFill="True">
+					<!-- Panel 1: Logo -->
+					<Panel DockPanel.Dock="Top" Height="100" Background="#f0f0f0">
+						<Image Source="{ Binding LogoImage }" Height="100" MaxWidth="300" Margin="0" Stretch="Uniform"/> <!--^ character tell Avalonia that this is an asynchronous binding -->
 					</Panel>
+
+					<!-- Panel 2: Búsqueda de empleados -->
+					<Panel DockPanel.Dock="Top">
+						<TextBox Height="30" Name="txtSearchEmployeePunch" Text="{Binding SearchText}" Watermark="Buscar empleado..." ToolTip.Tip="Cualquier filtro" Padding="4 5 35 3" />
+						<Button HorizontalAlignment="Right" Click="Button_Click" Name="btnClearFilter" ToolTip.Tip="Limpiar filtro" Height="26" Width="30" BorderThickness="1 0 1 1" Margin="0 0 1 0">
+							<PathIcon Data="{StaticResource clear_formatting_regular}" Foreground="Red" />
+						</Button>
+					</Panel>
+        
+					<!-- Panel 3: DataGrid (Ocupará  el espacio restante) -->
+					<Panel>
+						<!--<ScrollViewer Name="dgScrollViewer">-->
+						<DataGrid IsVisible="True" x:Name="dgAttsList" Name="dgAttsList" ItemsSource="{Binding SearchResults}" AutoGenerateColumns="False" CanUserSortColumns="False" SelectedIndex="{ Binding SelectedIndex }" VerticalScrollBarVisibility="Auto" Classes="main-grid">
+								<DataGrid.Columns>
+									<DataGridTextColumn Header="No." Binding="{Binding EmpNo}" Width="40" IsReadOnly="true" />
+									<DataGridTemplateColumn Header="Colaborador" Width="2*">
+										<DataGridTemplateColumn.CellTemplate>
+											<DataTemplate>
+												<TextBlock Text="{Binding FullName}" TextTrimming="CharacterEllipsis" ToolTip.ShowDelay="10" VerticalAlignment="Center" Padding="8 0">
+													<ToolTip.Tip>
+														<TextBlock Text="{Binding FullName}" Foreground="Black" />
+													</ToolTip.Tip>
+												</TextBlock>
+											</DataTemplate>
+										</DataGridTemplateColumn.CellTemplate>
+									</DataGridTemplateColumn>
+									<DataGridTextColumn Header="Hora" Binding="{Binding EventTime}" Width="1.8*" IsReadOnly="true"/>
+									<DataGridTextColumn Header="Evento" Binding="{Binding EventType}" Width="1.1*" IsReadOnly="true" />
+								</DataGrid.Columns>
+						</DataGrid>
+						<!--</ScrollViewer>-->
+					</Panel>
+				</DockPanel>
+
+				<Grid Grid.Column="1" Background="#d3d3d3" Name="gridCenter">
+					<Grid RowDefinitions="Auto, Auto, *" ColumnDefinitions="*">
+						<TextBlock x:Name="lblTimer" Grid.Row="0" Grid.Column="0" Height="120" Background="#f0f0f0" Text="{Binding CurrentTime}" TextAlignment="Center" FontSize="100" FontWeight="Bold" Padding="0 1 0 0"></TextBlock>
+						<StackPanel Grid.Row="1" Grid.Column="0" Height="120" Background="#ffffff">
+							<TextBlock Height="80" Name="lblEmpName" Text="{ Binding EmployeeName }" Foreground="#191979" FontWeight="Bold" FontSize="20" TextWrapping="Wrap" TextAlignment="Center" Margin="6 0" Padding="0 20 0 0" />
+							<TextBlock Height="40" Name="lblEmpEvent" Text="{ Binding EmployeeEvent }" Foreground="#a02213" FontWeight="Bold" FontSize="18" TextAlignment="Center" Padding="0 6 0 0" />
+						</StackPanel>
+						<Panel Grid.Row="2" Grid.Column="0">
+							<Grid RowDefinitions="*, Auto" ColumnDefinitions="*">
+								<Grid Grid.Row="0" Grid.Column="0">
+									<DataGrid Name="dgEmpPunches" Classes="dg-employee" ItemsSource="{Binding EmpPunches}" AutoGenerateColumns="False" CanUserSortColumns="False" SelectedIndex="{ Binding LastEmployeeEventItem }">
+										<DataGrid.Columns>
+											<DataGridTextColumn Header="Día" Binding="{Binding punchdate}" IsReadOnly="true" />
+											<DataGridTextColumn Header="Hora" Binding="{Binding punchtime}" Width="1*" IsReadOnly="true"  />
+											<DataGridTextColumn Header="Evento" Binding="{Binding punchevent}" Width="1*" IsReadOnly="true" />
+										</DataGrid.Columns>
+									</DataGrid>
+								</Grid>
+								<Grid Grid.Row="1" Grid.Column="0" Height="60">
+									<Panel Background="#f0f0f0">
+										<StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="2 0 0 0">
+											<Button Height="50" Command="{ Binding $parent[Window].DataContext.LogOutCommand }" ToolTip.Tip="Salir">
+												<!--<Image Source="/Assets/btnExit.png" Height="40" />-->
+                        <PathIcon Data="{StaticResource sign_out_regular}" Foreground="Red" Width="30" Height="30" />
+                      </Button>
+											<Button Height="50" Command="{ Binding $parent[Window].DataContext.PreviewLoggerCommand }" ToolTip.Tip="Log de comunicación WebSocket">
+												<!--<Image Source="/Assets/websocket.jpg" Height="40"/>-->
+                        <PathIcon Data="{StaticResource shifts_activity_regular}" Foreground="Purple" Width="30" Height="30" />
+                      </Button>
+										</StackPanel>
+										<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0 0 2 0">
+											<Button Name="btnSync" Margin="2 0" Width="50" Height="50" Command="{ Binding SyncEvtCommand }" ToolTip.Tip="Sincronización...">
+												<!--<Image Source="/Assets/btnSync.png" Height="40"/>-->
+                        <PathIcon Data="{StaticResource arrow_sync_regular}" Foreground="BlueViolet" Width="30" Height="30" />
+											</Button>
+											<Button Width="50" Height="50" Command="{ Binding $parent[Window].DataContext.LoginCommand }" ToolTip.Tip="Opciones de configuración...">
+                        <PathIcon Data="{StaticResource content_settings_regular}" Foreground="Purple" Width="30" Height="30" />
+											</Button>
+											<!--Just for testing purpose-->
+											<Button IsVisible="False" Width="50" Margin="2 0" Height="50" ToolTip.Tip="Send employees with no check-in or check-out by email." Command="{ Binding SendEmailCommand }">
+												<PathIcon Data="{StaticResource send_regular}" Foreground="Purple" />
+											</Button>
+											<Button IsVisible="False" Width="50" Margin="2 0" Height="50" ToolTip.Tip="Asistencia de empleados" Command="{ Binding PreviewAttendanceReportCommand }">
+												 <PathIcon Data="{StaticResource document_search_regular}" Foreground="Purple" />
+											</Button>
+										</StackPanel>
+									</Panel>
+								</Grid>
+							</Grid>
+						</Panel>
+					</Grid>
 				</Grid>
+
+				<DockPanel Grid.Column="2">
+					<Grid RowDefinitions="Auto, Auto, *" ColumnDefinitions="*" Background="#f0f0f0">
+						<StackPanel Grid.Row="0" Grid.Column="0" Height="40" Background="#ffffe0">
+							<TextBlock FontWeight="Bold" Foreground="#8c0000" FontSize="22" Padding="0 8 0 0" TextAlignment="Center">AVISOS:</TextBlock>
+						</StackPanel>
+						<TextBlock Grid.Row="1" Grid.Column="0" Height="80" Text="{ Binding NoticeTitle }" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" FontWeight="Bold" Foreground="#20356a" FontSize="22" Padding="8 8 15 8" TextAlignment="Center" />
+						<Panel Grid.Row="2" Grid.Column="0">
+							<TextBlock IsVisible="{Binding NoticeCollectionEmpty}" Text="No se encontró ningún aviso para esta ubicación o no se pudieron cargar." TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" FontSize="18" Padding="8 8 15 8" />
+							<StackPanel IsVisible="{Binding !NoticeCollectionEmpty}">
+								<Panel VerticalAlignment="Top" Height="200">
+									<TextBlock Text="{ Binding NoticeBody }" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" TextAlignment="Center" FontSize="18" Padding="8 0 8 0" />
+								</Panel>
+								<Border ClipToBounds="True" Margin="10, 0">
+									<TransitioningContentControl Content="{Binding NoticeImage}" PageTransition="{Binding SelectedTransition.Transition}" >
+										<TransitioningContentControl.ContentTemplate>
+											<DataTemplate DataType="Bitmap">
+												<Image Source="{Binding}" Stretch="Uniform" MaxHeight="400"/>
+											</DataTemplate>
+										</TransitioningContentControl.ContentTemplate>
+									</TransitioningContentControl>
+								</Border>
+							</StackPanel>
+						</Panel>
+					</Grid>
+				</DockPanel>
 			</Grid>
 
-			<DockPanel Grid.Column="2">
-				<Grid RowDefinitions="Auto, Auto, *" ColumnDefinitions="*" Background="#f0f0f0">
-					<StackPanel Grid.Row="0" Grid.Column="0" Height="40" Background="#ffffe0">
-						<TextBlock FontWeight="Bold" Foreground="#8c0000" FontSize="22" Padding="0 8 0 0" TextAlignment="Center">AVISOS:</TextBlock>
-					</StackPanel>
-					<TextBlock Grid.Row="1" Grid.Column="0" Height="80" Text="{ Binding NoticeTitle }" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" FontWeight="Bold" Foreground="#20356a" FontSize="22" Padding="8 8 15 8" TextAlignment="Center" />
-					<Panel Grid.Row="2" Grid.Column="0">
-						<TextBlock IsVisible="{Binding NoticeCollectionEmpty}" Text="No se encontró ningún aviso para esta ubicación o no se pudieron cargar." TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" FontSize="18" Padding="8 8 15 8" />
-						<StackPanel IsVisible="{Binding !NoticeCollectionEmpty}">
-							<Panel VerticalAlignment="Top" Height="200">
-								<TextBlock Text="{ Binding NoticeBody }" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" TextAlignment="Center" FontSize="18" Padding="8 0 8 0" />
-							</Panel>
-							<Border ClipToBounds="True" Margin="10, 0">
-								<TransitioningContentControl Content="{Binding NoticeImage}" PageTransition="{Binding SelectedTransition.Transition}" >
-									<TransitioningContentControl.ContentTemplate>
-										<DataTemplate DataType="Bitmap">
-											<Image Source="{Binding}" Stretch="Uniform" MaxHeight="400"/>
-										</DataTemplate>
-									</TransitioningContentControl.ContentTemplate>
-								</TransitioningContentControl>
-							</Border>
-						</StackPanel>
-					</Panel>
-				</Grid>
-			</DockPanel>
+			<Grid Grid.Row="1" ColumnDefinitions="*, *, *" Margin="0, Auto" Height="30" Background="#f0f0f0">
+				<StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+					<Grid Background="Red" IsVisible="{ Binding !IsNetConnected }">
+						<!--<Image Source="{SvgImage /Assets/cloud_offline.svg}" Height="25" />-->
+						<Image Source="/Assets/cloud_offline.png" Height="25" />
+					</Grid>
+					<Grid Background="#90ee90" IsVisible="{ Binding IsNetConnected }">
+						<Image Source="{SvgImage /Assets/cloud_online.svg}" Height="25" />
+					</Grid>
+					<Label IsVisible="{ Binding !IsNetConnected }" Content="{ Binding NetworkConStatus }" Padding="6 6 6 0" FontSize="14" FontWeight="Black" Background="Red" />
+					<Label IsVisible="{ Binding IsNetConnected }" Content="{ Binding NetworkConStatus }" Padding="6 6 6 0" FontSize="14" FontWeight="Black" Background="#90ee90" />
+					<Label Content="{ Binding Office }" FontSize="14" Padding="2 6 0 0" />
+				</StackPanel>
+				<TextBlock Grid.Column="1" IsVisible="{Binding !IsWebSocketConnected}" Text="{Binding ConnectionStatus}" Foreground="Red" VerticalAlignment="Center" TextAlignment="Center" FontSize="14" />
+				<TextBlock Grid.Column="1" IsVisible="{Binding IsWebSocketConnected}" Text="{Binding ConnectionStatus}" Foreground="Blue" VerticalAlignment="Center" TextAlignment="Center" FontSize="14" />
+				<StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
+					<Label Content="{ Binding CurrentLongDate }" FontSize="14" Padding="0 8 0 0" />
+					<Label FontSize="14" Padding="10 8 0 0" FontStyle="Italic">Powered by: </Label>
+					<Image Margin="4, 0" Source="/Assets/vt_software_logo.png" Height="20"></Image>
+				</StackPanel>
+			</Grid>
 		</Grid>
 
-		<Grid Grid.Row="1" ColumnDefinitions="*, *, *" Margin="0, Auto" Height="30" Background="#f0f0f0">
-			<StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-				<Grid Background="Red" IsVisible="{ Binding !IsNetConnected }">
-					<!--<Image Source="{SvgImage /Assets/cloud_offline.svg}" Height="25" />-->
-					<Image Source="/Assets/cloud_offline.png" Height="25" />
-				</Grid>
-				<Grid Background="#90ee90" IsVisible="{ Binding IsNetConnected }">
-					<Image Source="{SvgImage /Assets/cloud_online.svg}" Height="25" />
-				</Grid>
-				<Label IsVisible="{ Binding !IsNetConnected }" Content="{ Binding NetworkConStatus }" Padding="6 6 6 0" FontSize="14" FontWeight="Black" Background="Red" />
-				<Label IsVisible="{ Binding IsNetConnected }" Content="{ Binding NetworkConStatus }" Padding="6 6 6 0" FontSize="14" FontWeight="Black" Background="#90ee90" />
-				<Label Content="{ Binding Office }" FontSize="14" Padding="2 6 0 0" />
-			</StackPanel>
-			<TextBlock Grid.Column="1" IsVisible="{Binding !IsPusherConnected}" Text="{Binding Status}" Foreground="Red" VerticalAlignment="Center" TextAlignment="Center" FontSize="14" />
-			<TextBlock Grid.Column="1" IsVisible="{Binding IsPusherConnected}" Text="{Binding Status}" Foreground="Blue" VerticalAlignment="Center" TextAlignment="Center" FontSize="14" />
-			<StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
-				<Label Content="{ Binding CurrentLongDate }" FontSize="14" Padding="0 8 0 0" />
-				<Label FontSize="14" Padding="10 8 0 0" FontStyle="Italic">Powered by: </Label>
-				<Image Margin="4, 0" Source="/Assets/vt_software_logo.png" Height="20"></Image>
-			</StackPanel>
-		</Grid>
-	</Grid>
+		<!-- Overlay que se mostrará cuando se abra la ventana secundaria -->
+		<Panel x:Name="OverlayPanel" IsVisible="False" Background="#80000000">
+			<!-- El color de fondo con transparencia (80 = 50% opacidad (#80000000) y 60% (#99000000)) -->
+		</Panel>
+   </Panel>
 </Window>

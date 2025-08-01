@@ -1,16 +1,17 @@
 ﻿using Avalonia.Threading;
+using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using NLog.Targets;
 using ReactiveUI;
 using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using VTA_Clock;
@@ -28,10 +29,11 @@ namespace VTACheckClock.ViewModels
         readonly string logFilePath = Path.Combine(GlobalVars.AppWorkPath, "logs");
         private string _logText = "Waiting for log changes...";
         private string? _searchText;
+        private readonly MainSettings? m_settings;
 
-        public ObservableCollection<LogEntry> LogEntries { get; } = new();
-        public ObservableCollection<LogEntry> SearchResults { get; } = new();
-        public ObservableCollection<LogFile> LogFiles { get; } = new();
+        public ObservableCollection<LogEntry> LogEntries { get; } = [];
+        public ObservableCollection<LogEntry> SearchResults { get; } = [];
+        public ObservableCollection<LogFile> LogFiles { get; } = [];
         private int _selectedIndex = 0, _SelectedLogFile = -1;
 
         public WebsocketLoggerViewModel()
@@ -52,6 +54,8 @@ namespace VTACheckClock.ViewModels
             .Subscribe(DoSearch!);
 
             LogEntries.CollectionChanged += LogEntries_CollectionChanged;
+
+            m_settings = RegAccess.GetMainSettings() ?? new MainSettings();
         }
 
         public string LogText
@@ -81,7 +85,7 @@ namespace VTACheckClock.ViewModels
         public ReactiveCommand<Unit, Unit> CancelCommand { get; }
         public ICommand ReloadWSCommand { get; }
 
-        private void validateMainDirectory()
+        private void ValidateMainDirectory()
         {
             bool exists = Directory.Exists(logFilePath);
             if (!exists) Directory.CreateDirectory(logFilePath);
@@ -148,12 +152,13 @@ namespace VTACheckClock.ViewModels
                     }
                 } else {
                     var cacheInfo = File.ReadLines(fullFilePath).Skip(1).ToList();
+                    var emp_dt = GlobalVars.AppCache.RetrieveEmployees();
 
                     foreach (string infoItem in cacheInfo)
                     {
                         LogEntries.Add(new LogEntry() {
                             Timestamp = DateTime.Now,
-                            Message = GetCacheMessage(infoItem)
+                            Message = GetCacheMessage(infoItem, emp_dt)
                         });
                     }
                 }
@@ -169,14 +174,14 @@ namespace VTACheckClock.ViewModels
             try {
                 if (e.ChangeType == WatcherChangeTypes.Created || e.ChangeType == WatcherChangeTypes.Changed) {
                     ReadLogFile(e.FullPath);
-                    if(SelectedLogFileIndex == LogFiles.Count - 1) {
+                    //if(SelectedLogFileIndex == LogFiles.Count - 1) {
                         Dispatcher.UIThread.InvokeAsync(async() => {
                             await UpdateSearchResults(SearchText);
                         });
-                    }
+                    //}
                 }
             } catch (Exception ex) {
-                Console.WriteLine("Error while reading WebSocket Log Connection File: " + ex);
+                Debug.WriteLine("Error while reading WebSocket Log Connection File: " + ex);
             }
         }
 
@@ -190,7 +195,15 @@ namespace VTACheckClock.ViewModels
 
         private async Task ReloadWS()
         {
-            await _WSClient.ReloadConnection();
+            if (m_settings.UsePusher) {
+                await _WSClient.ReloadConnection();
+            }
+            else
+            {
+                // Obtener el servicio directamente
+                var SignalRClient = App.ServiceProvider.GetRequiredService<SignalRClient>();
+                await SignalRClient.ReloadConnectionAsync();
+            }
             //using StreamWriter sw = File.AppendText(logFilePath + "\\logss.txt");
             //sw.WriteLine("This is the new text");
         }
@@ -206,8 +219,9 @@ namespace VTACheckClock.ViewModels
 
                     foreach (FileInfo file in fileList) {
                         LogFiles.Add(new LogFile() {
-                            directory = "archive",
-                            filename = file.Name
+                            Directory = "archive",
+                            Filename = file.Name,
+                            CustomName = file.Name
                         });
                     }
                 }
@@ -217,8 +231,9 @@ namespace VTACheckClock.ViewModels
                 
                     foreach (FileInfo file in rooFileList) {
                         LogFiles.Add(new LogFile() {
-                            directory = "",
-                            filename = file.Name
+                            Directory = "",
+                            Filename = file.Name,
+                            CustomName = file.Name
                         });
                     }
                 }
@@ -226,24 +241,23 @@ namespace VTACheckClock.ViewModels
                 var cacheRoot = GlobalVars.DefWorkPath + @"\" + ((CacheMan.CacheDirs)0).ToString();
                 var currentCacheSubdir = cacheRoot + @"\" + ((CacheMan.CacheDirs)1).ToString();
                 var oldCacheSubdir = cacheRoot + @"\" + ((CacheMan.CacheDirs)2).ToString();
-                string[] ignore_files = new string[] { "vtattcache_456D7012" };
+                string[] ignore_files = ["vtattcache_456D7012"]; // Ignorar la cache de Huellas
 
                 DirectoryInfo curCacheInfo = new(currentCacheSubdir);
                 if (curCacheInfo.Exists)
                 {
                     FileInfo[] curFiles = curCacheInfo.GetFiles("*.vcch");
                    
-
                     foreach (FileInfo file in curFiles)
                     {
-                        bool shouldIgnore = ignore_files.Any(ignorePattern =>
-                            file.Name.IndexOf(ignorePattern, StringComparison.OrdinalIgnoreCase) >= 0);
+                        bool shouldIgnore = ignore_files.Any(ignorePattern => file.Name.Contains(ignorePattern, StringComparison.OrdinalIgnoreCase));
 
                         if (!shouldIgnore)
                         {
                             LogFiles.Add(new LogFile() {
-                                directory = currentCacheSubdir,
-                                filename = file.Name
+                                Directory = currentCacheSubdir,
+                                Filename = file.Name,
+                                CustomName = CacheMan.ReplaceFileName(file.Name) + "_CURRENT"
                             });
                         }
                     }
@@ -256,13 +270,13 @@ namespace VTACheckClock.ViewModels
 
                     foreach (FileInfo file in oldCacheFiles)
                     {
-                        bool shouldIgnore = ignore_files.Any(ignorePattern =>
-                            file.Name.IndexOf(ignorePattern, StringComparison.OrdinalIgnoreCase) >= 0);
+                        bool shouldIgnore = ignore_files.Any(ignorePattern => file?.Name.IndexOf(ignorePattern, StringComparison.OrdinalIgnoreCase) >= 0);
 
                         if (!shouldIgnore) { 
                             LogFiles.Add(new LogFile() {
-                                directory = oldCacheSubdir,
-                                filename = file.Name
+                                Directory = oldCacheSubdir,
+                                Filename = file.Name,
+                                CustomName = CacheMan.ReplaceFileName(file.Name) + "_OLD"
                             });
                         }
                     }
@@ -282,12 +296,12 @@ namespace VTACheckClock.ViewModels
                     var fileFound = LogFiles[index];
                     var FullPath = "";
 
-                    if (string.IsNullOrEmpty(fileFound.directory) || fileFound.directory == "archive") {
-                        FullPath = logFilePath + "\\" + Path.Combine(fileFound.directory!, fileFound.filename!);
+                    if (string.IsNullOrEmpty(fileFound.Directory) || fileFound.Directory == "archive") {
+                        FullPath = logFilePath + "\\" + Path.Combine(fileFound.Directory!, fileFound.Filename!);
                     }
                     else
                     {
-                        FullPath = Path.Combine(fileFound.directory, fileFound.filename!);
+                        FullPath = Path.Combine(fileFound.Directory, fileFound.Filename!);
                     }
 
                     ReadLogFile(FullPath);
@@ -333,16 +347,15 @@ namespace VTACheckClock.ViewModels
             SelectedIndex = SearchResults.Count - 1;
         }
     
-        private static string GetCacheMessage(string cacheLog)
+        private static string GetCacheMessage(string cacheLog, DataTable? emp_dt)
         {
             var currentInfoLog = CommonProcs.EnDeCapsulateTxt(cacheLog, false);
-            var cachePart = currentInfoLog.Split(new char[] { '|' });
-
-            var newMessage = "";
-            //var tester = new MainWindowViewModel().FingerPrints;
+            var cachePart = currentInfoLog.Split(['|']);
+            DataRow? employee = emp_dt?.AsEnumerable().FirstOrDefault(row => row.Field<string>("EmpID") == cachePart[0]);
+            string? empName = employee?.Field<string>("EmpName") ?? cachePart[0];
 
             DateTime v = CommonProcs.FromFileString(cachePart[2].ToString());
-            newMessage = $"El empleado { cachePart[0]} ha registrado {CommonObjs.EvTypes[int.Parse(cachePart[1].ToString() ?? "0")]} a las {v.ToString("HH:mm:ss")} horas.";
+            string? newMessage = $"El empleado {empName} ha registrado {CommonObjs.EvTypes[int.Parse(cachePart[1].ToString() ?? "0")]} a las {v:HH:mm:ss} horas el día {v:d/MM/yyyy}.";
 
             return newMessage;
         }

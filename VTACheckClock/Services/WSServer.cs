@@ -1,10 +1,8 @@
 ﻿using NLog;
 using PusherServer;
 using System;
-using System.Runtime;
 using System.Threading.Tasks;
 using VTACheckClock.Models;
-using VTACheckClock.Services;
 
 
 namespace VTACheckClock.Services

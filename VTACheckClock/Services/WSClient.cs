@@ -1,5 +1,4 @@
 ﻿using Avalonia.Threading;
-using DocumentFormat.OpenXml.Wordprocessing;
 using Newtonsoft.Json;
 using NLog;
 using PusherClient;
@@ -354,25 +353,10 @@ namespace VTA_Clock
                 }
                 */
 
-                ScantRequest scantreq = new() {
-                    Question = (
-                        (c_settings?.clock_office).ToString() + "|" +
-                        new_punch.Punchemp.ToString() + "|" +
-                        new_punch.Punchevent + "|" +
-                        new_punch.Punchtime.ToString("yyyy/MM/dd HH:mm:ss") + "|" +
-                        new_punch.Punchinternaltime.ToString("yyyy/MM/dd HH:mm:ss")
-                    )
-                };
-                
-                Dispatcher.UIThread.InvokeAsync(async () => {
-                    if(!await CommonProcs.PunchRegisterAsync(scantreq)) {
-                        log.Warn("The event of the employee with ID " + new_punch.Punchemp + " could not be registered.");
-                    }
-                });
-
                 Dispatcher.UIThread.InvokeAsync(async () => {
                     var punch = new PunchRecord {
-                        IdEmployee = new_punch.Punchemp, EmployeeFullName = emp.empnom,
+                        IdEmployee = new_punch.Punchemp, 
+                        EmployeeFullName = emp.empnom,
                         EventTime = new_punch.Punchtime.ToString("yyyy/MM/dd HH:mm:ss"),
                         InternalEventTime = new_punch.Punchinternaltime.ToString("yyyy/MM/dd HH:mm:ss"),
                         IdEvent = new_punch.Punchevent, EventName = CommonObjs.EvTypes[new_punch.Punchevent]
@@ -390,18 +374,51 @@ namespace VTA_Clock
         }
 
         /// <summary>
-        /// Reenvía los mensajes en cola, cuando la conexión se restablece
+        /// Reenvía los mensajes en cola, cuando la conexión se restablece.
+        /// <para>1. Introduce un contador de reintentos para evitar el ciclo infinito</para>
+        /// <para>2. Utiliza una cola temporal para manejar los mensajes durante los reintentos</para>
+        /// <para>3. Agrega un delay entre reintentos para no saturar el sistema</para>
+        /// <para>4. Mejora los mensajes de log para mostrar el progreso</para>
+        /// <para>5. Si se alcanza el máximo de reintentos, devuelve los mensajes a la cola principal para intentarlo en la próxima reconexión</para>
         /// </summary>
         /// <returns></returns>
         private async Task SendPendingMessagesAsync()
         {
+            const int maxRetries = 3; // Número máximo de reintentos
+            int currentRetry = 0;
+            var tempQueue = new ConcurrentQueue<PunchRecord>();
+
             while (PendingMessages.TryDequeue(out PunchRecord? pendingPunch)) {
+                if (!IsPusherConnected())
+                {
+                    // Si no hay conexión, guardamos el mensaje en una cola temporal
+                    tempQueue.Enqueue(pendingPunch);
+                    log.Warn($"Reintento de reenvio de mensajes {currentRetry + 1}/{maxRetries}: Conexión no disponible, almacenando mensaje...");
+                    
+                    currentRetry++;
+                    if (currentRetry >= maxRetries)
+                    {
+                        log.Error("Se alcanzó el límite máximo de reintentos. Los mensajes quedarán pendientes hasta la próxima reconexión.");
+                        // Devolvemos todos los mensajes a la cola principal
+                        while (tempQueue.TryDequeue(out PunchRecord? temp))
+                        {
+                            PendingMessages.Enqueue(temp);
+                        }
+
+                        break;
+                    }
+                    
+                    // Esperamos antes del siguiente reintento
+                    await Task.Delay(5000); // 5 segundos entre reintentos
+                    continue;
+                }
+                
                 await SendMessageAsync(pendingPunch);
             }
         }
 
         /// <summary>
-        /// Intenta enviar un mensaje, si la conexión falla, lo almacena en la cola.
+        /// Intenta enviar un mensaje via WebSocket, si la conexión falla, lo almacena en la cola.
         /// </summary>
         /// <param name="punch"></param>
         /// <returns></returns>

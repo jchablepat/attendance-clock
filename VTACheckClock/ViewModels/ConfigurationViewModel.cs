@@ -1,7 +1,4 @@
-﻿using Avalonia;
-using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Threading;
-using Microsoft.Win32;
+﻿using Avalonia.Threading;
 using NLog;
 using ReactiveUI;
 using System;
@@ -77,9 +74,11 @@ namespace VTACheckClock.ViewModels
         private async Task ValidateConfigurations()
         {
             try {
+                var getTime = await CommonObjs.GetTimeNow();
+
                 GlobalVars.TimeZone = RegAccess.GetRegValue("clock_timezone");
                 GlobalVars.RunningTime.Start();
-                GlobalVars.StartTime = await CommonObjs.GetDateTime();
+                GlobalVars.StartTime = getTime.CurrentTime;
                 GlobalVars.VTAttModule = 1;
                 string error_str = string.Empty;
                 await IsAppAlreadyRunningAsync();
@@ -131,7 +130,8 @@ namespace VTACheckClock.ViewModels
                     GlobalVars.IsRestart = false;
 
                     UrUClass.LoadCurrentReader();
-                    if (!UrUClass.OpenReader()) {
+                    if (!UrUClass.OpenReader())
+                    {
                         Title = "No se pudo inicializar el Lector de Huellas.";
                         Message = "No se ha encontrado ningún lector de huella dactilar o no se ha podido tener acceso al mismo.\n\nPruebe una de las siguientes opciones:\n\n1. Rectifique que el lector se encuentra debidamente conectado al equipo; deberá ver una luz azul en el lector que así lo indica.\n2. Asegúrese que los controladores necesarios han sido correctamente instalados.\n3. Conecte y desconecte el lector o conéctelo a un puerto USB diferente.\n4. Reinicie el equipo.\n\nSi el problema persiste, póngase en contacto con el administrador del sistema.";
                         return;

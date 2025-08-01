@@ -15,7 +15,7 @@ namespace VTACheckClock
         [STAThread]
         public static void Main(string[] args) {
             try {
-                BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+                BuildAvaloniaApp().StartWithClassicDesktopLifetime(args); // Prepare and run your App here
             } catch (Exception ex) {
                 log.Error(new Exception(), $"Error al cargar la App: {ex.InnerException}");
             } finally { 

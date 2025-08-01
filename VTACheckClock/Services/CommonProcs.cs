@@ -473,7 +473,7 @@ namespace VTACheckClock.Services
         public static async Task<bool> PunchRegisterAsync(ScantRequest req)
         {
             try {
-                string[] comm_data = req.Question.Split(new char[] { '|' });
+                string[] comm_data = req.Question.Split(['|']);
                 DataTable dt = await DBMethods.PunchRegisterAsync(int.Parse(comm_data[0]), int.Parse(comm_data[1]), int.Parse(comm_data[2]), comm_data[3], comm_data[4]);
 
                 bool has_errors = dt.Rows[0]["ErrMess"].ToString() != "None";

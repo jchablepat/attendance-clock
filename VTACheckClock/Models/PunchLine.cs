@@ -2,7 +2,7 @@
 
 namespace VTACheckClock.Models
 {
-    class PunchLine
+    public class PunchLine
     {
         public int Punchemp { get; set; }
         public int Punchevent { get; set; }

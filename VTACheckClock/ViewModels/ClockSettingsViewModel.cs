@@ -5,17 +5,21 @@ using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using DynamicData;
 using ReactiveUI;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Reactive;
 using System.Threading.Tasks;
 using VTACheckClock.Models;
 using VTACheckClock.Services;
+using VTACheckClock.Services.Auth;
 using VTACheckClock.Services.Libs;
+using VTACheckClock.Views;
 using static VTACheckClock.Views.MessageBox;
 
 namespace VTACheckClock.ViewModels
@@ -32,6 +36,8 @@ namespace VTACheckClock.ViewModels
 
         private int _selOffice = -1, _selTZ = -1;
         private bool _uuid = false, _websocket_enabled = false;
+        private readonly ClockSettings? _clockSettings;
+
         public TextBox? txtPathTmp { get; set; }
         public TextBox? txtFTPServ { get; set; }
         public TextBox? txtFTPPort { get; set; }
@@ -44,15 +50,21 @@ namespace VTACheckClock.ViewModels
         public ComboBox? cmbOff { get; set; }
         public TextBox? txtClockUsr { get; set; }
         public TextBox? txtClockPass { get; set; }
+        public TextBox? txtSignalRHubUrl { get; set; }
+        public TextBox? txtSignalRHubName { get; set; }
+        public TextBox? txtSignalRMethodName { get; set; }
 
         public ClockSettingsViewModel()
         {
-            Offices = new ObservableCollection<OfficeData>();
+            _clockSettings = RegAccess.GetClockSettings() ?? new ClockSettings();
+            Offices = [];
             SetDefPathCommand = ReactiveCommand.Create(SetDefPath);
             GenerateUUIDCommand = ReactiveCommand.Create(GenerateUUID);
             OpenFolderBrowserCommand = ReactiveCommand.CreateFromTask(OpenFolderBrowser);
             SaveSettingsCommand = ReactiveCommand.CreateFromTask(SaveSettings);
             CancelCommand = ReactiveCommand.Create(() => { });
+            RegisterDeviceCommand = ReactiveCommand.CreateFromTask(RegisterDevice);
+
             DoLogin();
         }
 
@@ -352,6 +364,85 @@ namespace VTACheckClock.ViewModels
             set => this.RaiseAndSetIfChanged(ref _mailRecipient, value);
         }
 
+        private bool _usePusher;
+        public bool UsePusher
+        {
+            get => _usePusher;
+            set => this.RaiseAndSetIfChanged(ref _usePusher, value);
+        }
+
+        private string _signalRHubUrl = "";
+        public string SignalRHubUrl
+        {
+            get => _signalRHubUrl;
+            set
+            {
+                if (string.IsNullOrEmpty(value) && !UsePusher)
+                {
+                    _signalRHubUrl = "";
+                    throw new DataValidationException("Campo requerido para SignalR");
+                }
+                else
+                {
+                    this.RaiseAndSetIfChanged(ref _signalRHubUrl, value);
+                }
+            }
+        }
+
+        private string _signalRHubName = "";
+        public string SignalRHubName
+        {
+            get => _signalRHubName;
+            set
+            {
+                if (string.IsNullOrEmpty(value) && !UsePusher)
+                {
+                    _signalRHubName = "";
+                    throw new DataValidationException("Campo requerido para SignalR");
+                }
+                else
+                {
+                    this.RaiseAndSetIfChanged(ref _signalRHubName, value);
+                }
+            }
+        }
+
+        private string _signalRMethodName = "";
+        public string SignalRMethodName
+        {
+            get => _signalRMethodName;
+            set
+            {
+                if (string.IsNullOrEmpty(value) && !UsePusher)
+                {
+                    _signalRMethodName = "";
+                    throw new DataValidationException("Campo requerido para SignalR");
+                }
+                else
+                {
+                    this.RaiseAndSetIfChanged(ref _signalRMethodName, value);
+                }
+            }
+        }
+
+        private string _signalRApiKey = "";
+        public string SignalRApiKey
+        {
+            get => _signalRApiKey;
+            set
+            {
+                if (string.IsNullOrEmpty(value) && !UsePusher)
+                {
+                    _signalRApiKey = "";
+                    throw new DataValidationException("Campo requerido para SignalR");
+                }
+                else
+                {
+                    this.RaiseAndSetIfChanged(ref _signalRApiKey, value);
+                }
+            }
+        }
+
         public ObservableCollection<OfficeData> Offices { get; } = new();
         public ObservableCollection<TimeZoneList> TimeZones { get; } = new();
         public ReactiveCommand<Unit, Unit> SetDefPathCommand { get; }
@@ -361,6 +452,7 @@ namespace VTACheckClock.ViewModels
         public IReactiveCommand SaveSettingsCommand { get; }
         public ReactiveCommand<Unit, Unit> CancelCommand { get; }
 
+        public ReactiveCommand<Unit, Unit> RegisterDeviceCommand { get; }
         #region Inicialización
         private readonly string? ws_url = string.Empty;
         //private bool forceclose;
@@ -440,7 +532,13 @@ namespace VTACheckClock.ViewModels
                 MailUser = m_settings?.MailUser ?? string.Empty;
                 MailPass = m_settings.MailPass ?? string.Empty;
                 MailRecipient = m_settings.MailRecipient ?? string.Empty;
-            } catch(Exception ex) {
+                UsePusher = m_settings.UsePusher;
+                SignalRHubUrl = m_settings.SignalRHubUrl ?? string.Empty;
+                SignalRHubName = m_settings.SignalRHubName ?? string.Empty;
+                SignalRMethodName = m_settings.SignalRMethodName ?? string.Empty;
+                SignalRApiKey = m_settings.SignalRApiKey ?? string.Empty;
+            }
+            catch (Exception ex) {
                 Console.WriteLine(ex);
             }
 
@@ -518,7 +616,7 @@ namespace VTACheckClock.ViewModels
             int iii = 0;
             Offices.Clear();
             OfficesList = null;
-            OfficesList = new List<IdxObjs>();
+            OfficesList = [];
 
             foreach (OfficeData la_off in las_offices)
             {
@@ -642,6 +740,27 @@ namespace VTACheckClock.ViewModels
                 return false;
             }
 
+            if (WebSocketEnabled && !UsePusher && string.IsNullOrWhiteSpace(SignalRHubUrl))
+            {
+                await ShowMessage("Se detectaron campos vacíos", "Debe proporcionar el Hub URL del WebSocket.", 350);
+                txtSignalRHubUrl.Focus();
+                return false;
+            }
+
+            if (WebSocketEnabled && !UsePusher && string.IsNullOrWhiteSpace(SignalRHubName))
+            {
+                await ShowMessage("Se detectaron campos vacíos", "Debe proporcionar el Hub Name del WebSocket.", 350);
+                txtSignalRHubName.Focus();
+                return false;
+            }
+
+            if (WebSocketEnabled && !UsePusher && string.IsNullOrWhiteSpace(SignalRMethodName))
+            {
+                await ShowMessage("Se detectaron campos vacíos", "Debe proporcionar el Method Name del WebSocket.", 350);
+                txtSignalRMethodName.Focus();
+                return false;
+            }
+
             if (!Path.IsPathRooted(PathTmp))
             {
                 await ShowMessage("Ruta temporal inválida", "No se comprende la ruta temporal especificada. Escriba una ruta absoluta (en la forma \"X:\\carpeta\\carpeta\") o selecciónela desde el cuadro de diálogo correspondiente.", 350);
@@ -675,7 +794,11 @@ namespace VTACheckClock.ViewModels
                 MailPort = MailPort,
                 MailUser = MailUser,
                 MailPass = MailPass,
-                MailRecipient = MailRecipient
+                MailRecipient = MailRecipient,
+                UsePusher = UsePusher,
+                SignalRHubUrl = SignalRHubUrl,
+                SignalRHubName = SignalRHubName,
+                SignalRMethodName = SignalRMethodName
             };
 
             if (GlobalVars.VTAttModule == 1)
@@ -724,7 +847,6 @@ namespace VTACheckClock.ViewModels
                 };
             }
 
-            var windows = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.Windows;
             if (CommonValids.ValidSettings(test_msettings, test_csettings, out int error_code, ws_url))
             {
                 if (GlobalVars.StartingUp) {
@@ -738,15 +860,14 @@ namespace VTACheckClock.ViewModels
                     }
 
                     await ShowMessage("Configuración actualizada", "La configuración ha sido almacenada correctamente.\n\n\nLa aplicación se reiniciará ahora.");
-                    windows?.Where(x => x.Name == "wdw_clock_settings").FirstOrDefault().Close(true);
-                    GlobalVars.IsRestart = true;
+                    RestartApp();
                     return true;
                 } else {
                     if (RegAccess.SetRegSettings(test_msettings, test_csettings))
                     {
                         await ShowMessage("Configuración guardada", "La configuración ha sido actualizada con éxito.", 350);
-                        windows?.Where(x => x.Name == "wdw_clock_settings").FirstOrDefault().Close(true);
-                        GlobalVars.IsRestart = true;
+                        RestartApp();
+
                         return true;
                     } else {
                         return false;
@@ -756,6 +877,13 @@ namespace VTACheckClock.ViewModels
                 await ShowMessage("Configuración Incorrecta", "No se pudo guardar la información, revise de nuevo.", 350);
                 return false;
             }
+        }
+
+        private static void RestartApp()
+        {
+            var windows = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.Windows;
+            windows?.Where(x => x.Name == "wdw_clock_settings").FirstOrDefault().Close(true);
+            GlobalVars.IsRestart = true;
         }
 
         #endregion
@@ -804,6 +932,23 @@ namespace VTACheckClock.ViewModels
             if (GlobalVars.clockSettings != null) GlobalVars.clockSettings.clock_uuid = new_giud;
             if (c_settings != null) c_settings.clock_uuid = new_giud;
             EvalUUID();
+        }
+
+        private async Task RegisterDevice()
+        {
+            try
+            {
+                var auth = new AuthenticationService(new HttpClient());
+                await auth.RegisterDeviceAsync($"checkclock_offices_{_clockSettings.clock_uuid}");
+
+
+                await ShowMessage("Registro exitoso", "El dispositivo ha sido registrado correctamente.", 350);
+                RestartApp();
+            }
+            catch (Exception ex)
+            {
+                await ShowMessage("Error", $"Error al registrar el dispositivo: {ex.Message}", 350);
+            }
         }
         #endregion
     }

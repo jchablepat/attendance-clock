@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace VTACheckClock.Models
+﻿namespace VTACheckClock.Models
 {
-    class PunchRecord
+    public class PunchRecord
     {
         public int IdEmployee { get; set; }
         public string? EmployeeFullName { get; set; }

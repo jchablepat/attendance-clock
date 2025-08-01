@@ -4,6 +4,7 @@ using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using VTACheckClock.Helpers;
 using VTACheckClock.Models;
 using VTACheckClock.Services;
 using VTACheckClock.Services.Libs;
@@ -70,6 +71,7 @@ namespace VTACheckClock.ViewModels
             {
                 await ShowMessage("Credenciales incorrectas", "El usuario y/o la contraseña no son válidos.", 300);
             }
+
             return CanAccess;
         }
     }

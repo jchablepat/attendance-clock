@@ -184,12 +184,14 @@ namespace VTACheckClock.Services
                 return false;
             }
 
-            List<PropertyInfo> las_props = new(msettings.GetType().GetProperties());
+            List<PropertyInfo> las_props = [.. msettings.GetType().GetProperties()];
+
             string[] nullableProperties = { 
                 "Employees_host", "Websocket_enabled", "Websocket_host", "Websocket_port", 
                 "Pusher_key", "Pusher_cluster", "Pusher_app_id", "Pusher_secret", "Event_name", 
                 "Ws_url", "Db_server", "Db_name", "Db_user", "Db_pass", "Logo", "mailEnabled",
-                "MailServer", "MailPort", "MailUser", "MailPass", "MailRecipient"
+                "MailServer", "MailPort", "MailUser", "MailPass", "MailRecipient",
+                "UsePusher", "SignalRHubUrl", "SignalRHubName", "SignalRMethodName", "SignalRApiKey"
             };
 
             foreach (PropertyInfo la_prop in las_props)
@@ -208,7 +210,8 @@ namespace VTACheckClock.Services
 
             if (GlobalVars.VTAttModule == 1)
             {
-                las_props = new List<PropertyInfo>(csettings.GetType().GetProperties());
+                las_props = [.. csettings.GetType().GetProperties()];
+
                 string[] nullProperties = { "clock_uuid", "clock_timezone" };
 
                 foreach (PropertyInfo la_prop in las_props)

@@ -5,21 +5,17 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform;
 using Avalonia.ReactiveUI;
-using DPUruNet;
-using MsBox.Avalonia;
-using MsBox.Avalonia.Dto;
+using Microsoft.Extensions.DependencyInjection;
 using MsBox.Avalonia.Enums;
-using MsBox.Avalonia.Models;
+using NLog;
 using ReactiveUI;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using VTACheckClock.Helpers;
 using VTACheckClock.Models;
-using VTACheckClock.Services;
 using VTACheckClock.Services.Libs;
 using VTACheckClock.ViewModels;
 using static VTACheckClock.Views.MessageBox;
@@ -29,8 +25,8 @@ namespace VTACheckClock.Views
     /*public*/
     partial class MainWindow : ReactiveWindow<MainWindowViewModel> /*Window*/
     {
-        private List<Fmd>? las_fmds;
-        private List<FMDItem>? fmd_collection;
+        private static readonly Logger log = LogManager.GetLogger("app_logger");
+        private readonly TimeChangeAuditService _timeAuditService;
 
         public MainWindow()
         {
@@ -40,7 +36,6 @@ namespace VTACheckClock.Views
             //this.WhenActivated(d => d(ViewModel!.ShowPwdPunchDialog.RegisterHandler(ShowPwdPunchDialogAsync)));
             this.WhenActivated(d => d(ViewModel!.ShowLoggerDialog.RegisterHandler(ShowLoggerDialogAsync)));
             this.WhenActivated(d => d(ViewModel!.ShowAttendanceRptDialog.RegisterHandler(ShowAttendanceRptDialogAsync)));
-            GetFMDs();
 
             Activated += OnActivated;
 
@@ -60,6 +55,14 @@ namespace VTACheckClock.Views
             WindowHelper.CenterOnScreen(this);
 
             dgAttsList.SelectionChanged += DgAttsList_SelectionChanged;
+            Messenger.MessageReceived += Messenger_MessageReceived;
+            _timeAuditService = App.ServiceProvider.GetRequiredService<TimeChangeAuditService>();
+            _timeAuditService.Initialize();
+        }
+
+        private void Messenger_MessageReceived(object? sender, Messenger.MessageEventArgs e)
+        {
+            OverlayPanel.IsVisible = (bool) e.Data;
         }
 
         private void DgAttsList_SelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -95,17 +98,21 @@ namespace VTACheckClock.Views
             //Position = new PixelPoint(screen.Bounds.X, screen.Bounds.Y);
         }
 
-        private async Task DoShowDialogAsync(InteractionContext<LoginViewModel, bool> interaction)
+        private async Task DoShowDialogAsync(IInteractionContext<LoginViewModel, bool> interaction)
         {
+            OverlayPanel.IsVisible = true;
+
             var dialog = new LoginWindow {
                 DataContext = interaction.Input
             };
 
             var result = await dialog.ShowDialog<bool>(this);
             interaction.SetOutput(result);
+
+            OverlayPanel.IsVisible = false;
         }
 
-        private async Task ShowPwdPunchDialogAsync(InteractionContext<PwdPunchViewModel, int> interaction)
+        private async Task ShowPwdPunchDialogAsync(IInteractionContext<PwdPunchViewModel, int> interaction)
         {
             var dialog = new PwdPunchWindow
             {
@@ -116,8 +123,10 @@ namespace VTACheckClock.Views
             interaction.SetOutput(result);
         }
 
-        private async Task ShowLoggerDialogAsync(InteractionContext<WebsocketLoggerViewModel, bool> interaction)
+        private async Task ShowLoggerDialogAsync(IInteractionContext<WebsocketLoggerViewModel, bool> interaction)
         {
+            OverlayPanel.IsVisible = true;
+
             var dialog = new WebsocketLoggerWindow
             {
                 DataContext = interaction.Input
@@ -125,9 +134,11 @@ namespace VTACheckClock.Views
 
             var result = await dialog.ShowDialog<bool>(this);
             interaction.SetOutput(result);
+
+            OverlayPanel.IsVisible = false;
         }
 
-        private async Task ShowAttendanceRptDialogAsync(InteractionContext<AttendanceViewModel, bool> interaction)
+        private async Task ShowAttendanceRptDialogAsync(IInteractionContext<AttendanceViewModel, bool> interaction)
         {
             var dialog = new AttendanceWindow() {
                 DataContext = interaction.Input
@@ -145,6 +156,12 @@ namespace VTACheckClock.Views
             } else {
                 await LogOut();
             }
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            _timeAuditService?.Dispose();
+            base.OnClosed(e);
         }
 
         /// <summary>
@@ -167,23 +184,29 @@ namespace VTACheckClock.Views
             } else if(e.Key == Key.F11) {
                 ToggleFullScreen();
             } else if(e.Key == Key.F12) {
-                try {
-                    var frmPassPunc = new PwdPunchViewModel(fmd_collection);
-                    var dialog = new PwdPunchWindow {
-                        DataContext = frmPassPunc
-                    };
+                //try {
+                //    var frmPassPunc = new PwdPunchViewModel(fmd_collection);
+                //    var dialog = new PwdPunchWindow {
+                //        DataContext = frmPassPunc
+                //    };
 
-                    int found_idx = await dialog.ShowDialog<int>(this);
-                    if(found_idx != -1) {
-                        ((MainWindowViewModel?)DataContext).PwdPunchIndex = found_idx;
-                    }
-                } catch (Exception ex) {
-                    await ShowMessage("Error en la ventana de Empleado", ex.Message);
-                    Debug.WriteLine(ex);
-                }
+                //    OverlayPanel.IsVisible = true;
+                //    int found_idx = await dialog.ShowDialog<int>(this);
+                //    if(found_idx != -1) {
+                //        ((MainWindowViewModel?)DataContext).PwdPunchIndex = found_idx;
+                //    }
+                //    OverlayPanel.IsVisible = false;
+                //}
+                //catch (Exception ex) {
+                //    await ShowMessage("Error en la ventana de Empleado", ex.Message);
+                //    Debug.WriteLine(ex);
+                //}
             } else if (e.Key == Key.Escape) {
+                OverlayPanel.IsVisible = true;
                 await LogOut();
-            } else if (e.Key == Key.LeftAlt) {
+                OverlayPanel.IsVisible = false;
+            }
+            else if (e.Key == Key.LeftAlt) {
                 e.Handled = true;
             }
 
@@ -199,73 +222,15 @@ namespace VTACheckClock.Views
             await window.ShowDialog(this);
 
             if (window.SelectedAction != null) {
-                int found_idx = fmd_collection.FindIndex(f => f.empid == window.EmployeeId);
+                var emp_dt = GlobalVars.AppCache.RetrieveEmployees();
+                int found_idx = (int)(emp_dt?.AsEnumerable()
+                    .Select((row, index) => new { Row = row, Index = index })
+                    .Where(x => x.Row.Field<string>("EmpID") == window.EmployeeId.ToString())
+                    .Select(x => x.Index).FirstOrDefault(-1))!;
 
                 //var parentViewModel = new MainWindowViewModel("");
                 //DataContext = parentViewModel;
                 ((MainWindowViewModel?)DataContext).PwdPunchIndex = found_idx;
-            }
-        }
-
-        /// <summary>
-        /// Recupera las huellas dactilares de los empleados asignados a la oficina actual.
-        /// </summary>
-        private bool GetFMDs()
-        {
-            DataTable? emp_dt;
-            int el_idx = 0;
-            las_fmds = null;
-            fmd_collection = null;
-            las_fmds = new List<Fmd>();
-            fmd_collection = new List<FMDItem>();
-
-            if (!GlobalVars.BeOffline)
-            {
-                emp_dt = CommonProcs.GetOfficeFMDs((new ScantRequest { Question = (GlobalVars.clockSettings.clock_office.ToString()) }));
-
-                if (emp_dt == null) {
-                    emp_dt = CommonObjs.VoidFMDs;
-                } else {
-                    GlobalVars.AppCache.SaveEmployees(emp_dt);
-                }
-            }
-            else
-            {
-                emp_dt = GlobalVars.AppCache.RetrieveEmployees();
-            }
-
-            if(emp_dt.Columns.Contains("Error")) {
-                return false;
-            }
-
-            foreach (DataRow dr in emp_dt.Rows)
-            {
-                las_fmds.Add(new Fmd(SimpleAES.ToHexBytes(dr["FingerFMD"].ToString() ?? ""), GlobalVars.FMDFormat, GlobalVars.FMDVersion));
-
-                var item = new FMDItem {
-                    idx = el_idx,
-                    offid = int.Parse(dr["OffID"].ToString() ?? "0"),
-                    empid = int.Parse(dr["EmpID"].ToString() ?? "0"),
-                    fingid = int.Parse(dr["FingerID"].ToString() ?? "0"),
-                    empnum = dr["EmpNum"].ToString(),
-                    empnom = dr["EmpName"].ToString(),
-                    emppass = dr["EmpPass"].ToString(),
-                    fmd = SimpleAES.ToHexBytes(dr["FingerFMD"].ToString()!)
-                };
-
-                fmd_collection.Add(item);
-
-                el_idx++;
-            }
-
-            if (las_fmds.Count <= 0) las_fmds.Add(new Fmd((new byte[124]), GlobalVars.FMDFormat, GlobalVars.FMDVersion));
-
-            if (((emp_dt == null) || (emp_dt.Rows.Count <= 0)) && GlobalVars.StartingUp) {
-                return false;
-            }
-            else
-            {
-                return true;
             }
         }
 
@@ -287,7 +252,7 @@ namespace VTACheckClock.Views
                     }
                 }
             } catch(Exception exc) {
-                Debug.WriteLine(exc);
+                log.Warn("Error ocurred while logging out: " + exc.Message);
             }
         }
 

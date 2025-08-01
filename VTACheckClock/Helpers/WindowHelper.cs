@@ -1,5 +1,6 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
+using System;
 using System.Linq;
 
 namespace VTACheckClock.Helpers
@@ -27,15 +28,17 @@ namespace VTACheckClock.Helpers
         private static void CenterWindowOnScreen(Window window, int screenIndex)
         {
             // Acceder a las pantallas a través de la aplicación actual
-            var screens = window.Screens.All.ToList();
+            var screens = window.Screens.All.OrderByDescending(y => y.IsPrimary == true).ToList();
 
             // Verificar si el índice de pantalla solicitado es válido
             if (screens.Count > screenIndex)
             {
-                var wHeight = window.Height;
+                var wHeight = Double.IsNaN(window.Height) ? 0 : window.Height;
+                var wWidth = Double.IsNaN(window.Width) ? 0 : window.Width;
+
                 // Obtener la pantalla solicitada
                 var targetScreen = screens[screenIndex];
-                var xWidth = (targetScreen.Bounds.Width - window.Width) / 2;
+                var xWidth = (targetScreen.Bounds.Width - wWidth) / 2;
                 var xHeight = (targetScreen.Bounds.Height - wHeight) / 2;
 
                 // Calcular la posición central en la pantalla seleccionada

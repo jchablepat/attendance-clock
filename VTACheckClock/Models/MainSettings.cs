@@ -1,6 +1,6 @@
 ﻿namespace VTACheckClock.Models
 {
-    class MainSettings
+    public class MainSettings
     {
         public string? Ws_url { get; set; }
         public string? Db_server { get; set; }
@@ -28,5 +28,10 @@
         public string? MailUser { get; set; }
         public string? MailPass { get; set; }
         public string? MailRecipient { get; set; }
+        public bool UsePusher { get; set; }
+        public string? SignalRHubUrl { get; set; }
+        public string? SignalRHubName { get; set; }
+        public string? SignalRMethodName { get; set; }
+        public string? SignalRApiKey { get; set; }
     }
 }

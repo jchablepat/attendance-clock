@@ -1,14 +1,8 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Data;
-using System.Data.SqlClient;
-using System.Globalization;
-using System.Linq;
-using System.Text;
+using Microsoft.Data.SqlClient;
 using System.Threading.Tasks;
 using VTACheckClock.Models;
-using VTACheckClock.Services;
 
 namespace VTACheckClock.DBAccess
 {
@@ -198,6 +192,15 @@ namespace VTACheckClock.DBAccess
         {
             SqlCommand comando = DBInterface.CrearComando(2);
             comando.CommandText = "[attendance].[GetEmployeesWithNoCheckInOut]";
+            comando.Parameters.AddWithValue("@off_id", office_id);
+
+            return await DBInterface.EjecutarComandoSelectAsync(comando);
+        }
+
+        public static async Task<DataTable> GetDuplicatedPunches(int office_id)
+        {
+            SqlCommand comando = DBInterface.CrearComando(2);
+            comando.CommandText = "[attendance].[GetDuplicatedPunches]";
             comando.Parameters.AddWithValue("@off_id", office_id);
 
             return await DBInterface.EjecutarComandoSelectAsync(comando);

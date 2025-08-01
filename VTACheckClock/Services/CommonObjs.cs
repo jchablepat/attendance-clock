@@ -1,10 +1,10 @@
 ﻿using Newtonsoft.Json.Linq;
+using NLog;
 using System;
 using System.Data;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
-using System.Threading;
 using System.Threading.Tasks;
 using VTACheckClock.Models;
 using VTACheckClock.Services.Libs;
@@ -13,6 +13,8 @@ namespace VTACheckClock.Services
 {
     class CommonObjs
     {
+        private static readonly Logger log = LogManager.GetLogger("app_logger");
+
         public class RemoteTime
         {
             public string? TimeString { get; set; }
@@ -20,7 +22,7 @@ namespace VTACheckClock.Services
         }
 
         /// <summary>
-        /// Devuelve la hora actual.
+        /// Devuelve la hora actual. Si no se puede obtener la hora de Internet, devuelve la hora local actual del sistema.
         /// </summary>
         public static async Task<RemoteTime> GetTimeNow() {
             var time = await GetDateTime();
@@ -36,8 +38,7 @@ namespace VTACheckClock.Services
         }
 
         /// <summary>
-        /// Sincroniza la hora de Internet y la convierte a la zona horaria configurada. En caso de no haber conexion
-        /// con Internet devuelve la hora local de la PC.
+        /// Sincroniza la hora de Internet y la convierte a la zona horaria configurada. En caso de no haber conexion con Internet devuelve DateTime.MinValue.
         /// </summary>
         /// <returns></returns>
         public static async Task<DateTime> GetDateTime()
@@ -132,7 +133,8 @@ namespace VTACheckClock.Services
                 var networkDateTime = (new DateTime(1900, 1, 1)).AddMilliseconds((long)milliseconds);
 
                 return networkDateTime;
-            } catch {
+            } catch(Exception ex) {
+                log.Warn("Error al obtener la hora de red en {0}: {1}", NtpServer, ex.Message);
                 return DateTime.Now;
             }
         }
@@ -245,7 +247,7 @@ namespace VTACheckClock.Services
         public static string[] EvTypes
         {
             get {
-                return new string[] { "Desconocido", "Entrada", "Salida" };
+                return ["Desconocido", "Entrada", "Salida"];
             }
         }
 
@@ -288,6 +290,39 @@ namespace VTACheckClock.Services
         public static ScantResponse BeBlunt(bool la_resp)
         {
             return new ScantResponse { ack = la_resp };
+        }
+
+        /// <summary>
+        /// Genera una clave API para el acceso a un hub de SignalR.
+        /// </summary>
+        /// <param name="SignalRHubUrl"></param>
+        /// <param name="SignalRHubName"></param>
+        /// <param name="SignalRMethodName"></param>
+        /// <returns></returns>
+        public static async Task<string> GenerateSignalRApiKeyAsync(string SignalRHubUrl, string SignalRHubName, string SignalRMethodName)
+        {
+            // Pseudocódigo:
+            // 1. Generar un array de bytes aleatorios usando RandomNumberGenerator.
+            // 2. Convertir los bytes a una cadena segura (por ejemplo, Base64Url).
+            // 3. Devolver la cadena como clave API.
+
+            return await Task.Run(() =>
+            {
+                const int keyLength = 32; // 256 bits
+                byte[] keyBytes = new byte[keyLength];
+                using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+                {
+                    rng.GetBytes(keyBytes);
+                }
+
+                // Usar Base64Url para evitar caracteres no seguros en URLs
+                string apiKey = Convert.ToBase64String(keyBytes)
+                    .Replace('+', '-')
+                    .Replace('/', '_')
+                    .TrimEnd('=');
+
+                return apiKey;
+            });
         }
     }
 }

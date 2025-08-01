@@ -22,6 +22,7 @@ namespace VTACheckClock.Views
             InitializeComponent();
             this.WhenActivated(d => d(ViewModel!.CancelCommand.Subscribe(model => {
                 Close();
+                Messenger.Send("ToggleOverlay", false);
             })));
 
             txtFTPPort.KeyDown += OnTextInput;
@@ -47,9 +48,14 @@ namespace VTACheckClock.Views
                 ((ClockSettingsViewModel?)DataContext).cmbOff = cmbOff;
                 ((ClockSettingsViewModel?)DataContext).txtClockUsr = txtClockUsr;
                 ((ClockSettingsViewModel?)DataContext).txtClockPass = txtClockPass;
+                ((ClockSettingsViewModel?)DataContext).txtSignalRHubUrl = txtSignalRHubUrl;
+                ((ClockSettingsViewModel?)DataContext).txtSignalRHubName = txtSignalRHubName;
+                ((ClockSettingsViewModel?)DataContext).txtSignalRMethodName = txtSignalRMethodName;
             };
 
             WindowHelper.CenterOnScreen(this);
+
+            Messenger.Send("ToggleOverlay", true);
         }
 
         private void ClockSettingsWindow_Opened(object? sender, EventArgs e)
@@ -85,6 +91,7 @@ namespace VTACheckClock.Views
         {
             if (e.Key == Key.Escape) {
                 Close();
+                Messenger.Send("ToggleOverlay", false);
             }
         }
 

@@ -2,7 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="180"
 				Width="320" Height="180" CanResize="False" 
         x:Class="VTACheckClock.Views.LoginWindow"
 				WindowStartupLocation="CenterScreen"
@@ -13,10 +13,6 @@
 	<Window.Styles>
 		<Style Selector="Button">
 			<Setter Property="Height" Value="30"/>
-		</Style>
-		<Style Selector="Button:pointerover /template/ ContentPresenter">
-			<Setter Property="BorderBrush" Value="Black" />
-			<Setter Property="BorderThickness" Value="1" />
 		</Style>
 		<Style Selector="Button.btn-primary">
 			<Setter Property="Background" Value="#ff0078d7"/>
@@ -33,12 +29,12 @@
 		<StackPanel Margin="8 0 8 0">
 			<TextBlock Text="Favor de iniciar sesión" FontSize="20" FontWeight="Bold" TextAlignment="Center" Margin="10" />
 			<DockPanel Margin="0 0 0 15">
-				<TextBlock DockPanel.Dock="Left" Text="Usuario:" FontSize="18" VerticalAlignment="Center" />
-				<TextBox Name="txtUser" DockPanel.Dock="Right" Text="{Binding Username}" FontSize="18" Width="200" HorizontalAlignment="Right" KeyUp="TriggerEnter_OnKeyUp" />
+        <PathIcon Data="{StaticResource person_arrow_right_regular}" Width="25" Height="25" Margin="35 0 0 0" />
+        <TextBox Name="txtUser" Watermark="Usuario" DockPanel.Dock="Right" Text="{Binding Username}" FontSize="18" Width="200" HorizontalAlignment="Right" KeyUp="TriggerEnter_OnKeyUp" />
 			</DockPanel>
 			<DockPanel>
-				<TextBlock DockPanel.Dock="Left" Text="Contraseña:" FontSize="18" VerticalAlignment="Center" />
-				<TextBox Name="txtPwd" DockPanel.Dock="Right" PasswordChar="*" Text="{Binding Password}" FontSize="18" Padding="4 7 4 0" Width="200" HorizontalAlignment="Right" KeyUp="TriggerEnter_OnKeyUp" />
+        <PathIcon Data="{StaticResource password_regular}" Width="25" Height="25" Margin="35 0 0 0" />
+				<TextBox Name="txtPwd" Watermark="Contraseña" DockPanel.Dock="Right" PasswordChar="*" Text="{Binding Password}" FontSize="18" Padding="4 7 4 0" Width="200" HorizontalAlignment="Right" KeyUp="TriggerEnter_OnKeyUp" />
 			</DockPanel>
 			<DockPanel LastChildFill="False" Margin="0 10 0 0">
 				<Button Name="btnExit" Classes="btn-danger" Command="{ Binding CancelCommand }" DockPanel.Dock="Left" Width="100">Cancelar</Button>

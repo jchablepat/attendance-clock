@@ -1,5 +1,7 @@
 ﻿using Microsoft.Win32;
+using NLog;
 using System;
+using System.Reactive;
 using System.Runtime.InteropServices;
 using VTACheckClock.Models;
 using VTACheckClock.Services.Libs;
@@ -8,6 +10,8 @@ namespace VTACheckClock.Services
 {
     class RegAccess
     {
+        private static readonly Logger log = LogManager.GetLogger("app_logger");
+
         /// <summary>
         /// Obtiene las configuraciones generales almacenadas en el Registro de Windows en un objeto MainSettings.
         /// </summary>
@@ -47,6 +51,11 @@ namespace VTACheckClock.Services
                             MailUser = GetRegValue("mailUser"),
                             MailPass = GetRegValue("mailPass"),
                             MailRecipient = GetRegValue("mailRecipient"),
+                            UsePusher = GetBoolFromByte("usePusher"),
+                            SignalRHubUrl = GetRegValue("signalRHubUrl"),
+                            SignalRHubName = GetRegValue("signalRHubName"),
+                            SignalRMethodName = GetRegValue("signalRMethodName"),
+                            SignalRApiKey = GetRegValue("signalRApiKey")
                         };
 
                         la_key.Close();
@@ -186,6 +195,11 @@ namespace VTACheckClock.Services
                             MailUser = GetRegValue("mailUser"),
                             MailPass = GetRegValue("mailPass"),
                             MailRecipient = GetRegValue("mailRecipient"),
+                            UsePusher = GetBoolFromByte("usePusher"),
+                            SignalRHubUrl = GetRegValue("signalRHubUrl"),
+                            SignalRHubName = GetRegValue("signalRHubName"),
+                            SignalRMethodName = GetRegValue("signalRMethodName"),
+                            SignalRApiKey = GetRegValue("signalRApiKey")
                         };
 
                         if (GlobalVars.VTAttModule == 1) {
@@ -352,6 +366,14 @@ namespace VTACheckClock.Services
                         la_key.SetValue("mailUser", aes_crypt.EncryptToBytes(msettings.MailUser));
                         la_key.SetValue("mailPass", aes_crypt.EncryptToBytes(msettings.MailPass));
                         la_key.SetValue("mailRecipient", aes_crypt.EncryptToBytes(msettings.MailRecipient));
+                        la_key.SetValue("usePusher", aes_crypt.EncryptToBytes(msettings.UsePusher.ToString()));
+                        la_key.SetValue("signalRHubUrl", aes_crypt.EncryptToBytes(msettings.SignalRHubUrl));
+                        la_key.SetValue("signalRHubName", aes_crypt.EncryptToBytes(msettings.SignalRHubName));
+                        la_key.SetValue("signalRMethodName", aes_crypt.EncryptToBytes(msettings.SignalRMethodName));
+                        la_key.SetValue("db_server", aes_crypt.EncryptToBytes(msettings.Db_server));
+                        la_key.SetValue("db_name", aes_crypt.EncryptToBytes(msettings.Db_name));
+                        la_key.SetValue("db_user", aes_crypt.EncryptToBytes(msettings.Db_user));
+                        la_key.SetValue("db_pass", aes_crypt.EncryptToBytes(msettings.Db_pass));
 
                         if (GlobalVars.VTAttModule == 1) {
                             la_key.SetValue("clock_office", aes_crypt.EncryptToBytes(csettings.clock_office.ToString()));
@@ -361,7 +383,8 @@ namespace VTACheckClock.Services
                         }
 
                         la_resp = true;
-                    } catch {
+                    } catch(Exception ex) {
+                        log.Warn("Error al guardar configuraciones en el registro: " + ex.Message);
                         la_resp = false;
                     }
                     finally {
