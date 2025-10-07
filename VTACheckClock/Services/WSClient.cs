@@ -11,11 +11,10 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using VTACheckClock.Models;
-using VTACheckClock.Services;
 using VTACheckClock.Services.Libs;
 using VTACheckClock.Views;
 
-namespace VTA_Clock
+namespace VTACheckClock.Services
 {
     class WSClient
     {
@@ -211,22 +210,23 @@ namespace VTA_Clock
                 if (error is ChannelUnauthorizedException unauthorizedAccess)
                 {
                     // Private and Presence channel failed authorization with Forbidden (403)
-                    log.Error(new Exception(), "Private and Presence channel failed authorization with Forbidden: " + error.ToString());
+                    log.Error(new Exception(), "Private and Presence channel failed authorization with Forbidden: " + unauthorizedAccess.Message);
                 }
                 else if (error is ChannelAuthorizationFailureException httpError)
                 {
                     // Authorization endpoint returned an HTTP error other than Forbidden (403)
-                    log.Error(new Exception(), "Authorization endpoint returned an HTTP error other than Forbidden: " + error.ToString());
+                    log.Error(new Exception(), "Authorization endpoint returned an HTTP error other than Forbidden: " + httpError.Message);
                 }
                 else if (error is OperationTimeoutException timeoutError)
                 {
                     // A client operation has timed-out. Governed by PusherOptions.ClientTimeout
-                    log.Error(new Exception(), "A client operation has timed-out: " + error.ToString());
+                    log.Error(new Exception(), "A client operation has timed-out: " + timeoutError.Message);
                 }
                 else if (error is ChannelDecryptionException decryptionError)
                 {
                     // Failed to decrypt the data for a private encrypted channel
                     log.Error(new Exception(), "Failed to decrypt the data for a private encrypted channel: " + error.ToString());
+                    log.Warn("ChannelDecryptionException => " + decryptionError.Message);
                 }
                 else
                 {
@@ -299,7 +299,7 @@ namespace VTA_Clock
                     //dynamic notice = JsonConvert.DeserializeObject(jsonConvert.Data);
                     Dispatcher.UIThread.InvokeAsync(async () => {
                         await Task.Delay(200);
-                        new MainWindow().addNotice(new Notice {
+                        new MainWindow().AddNotice(new Notice {
                             id = Convert.ToInt32(notice.id),
                             caption = notice.caption,
                             body = notice.body,
@@ -442,7 +442,7 @@ namespace VTA_Clock
 
         public static bool IsPusherConnected()
         {
-            bool IsConnected = (_Pusher != null) && (_Pusher.State == ConnectionState.Connected);
+            bool IsConnected = _Pusher != null && _Pusher.State == ConnectionState.Connected;
             bool IsSubscribed = _TimeClockChannel?.IsSubscribed ?? false;
             return IsConnected && IsSubscribed;
         }
@@ -498,7 +498,7 @@ namespace VTA_Clock
                 HttpRequestMessage? request = new() {
                     Method = CreateHttpMethod(method),
                     RequestUri = new Uri(url),
-                    Content = (method != MethodHttp.GET && method != MethodHttp.DELETE) ? bytecontent : null
+                    Content = method != MethodHttp.GET && method != MethodHttp.DELETE ? bytecontent : null
                 };
 
                 using HttpResponseMessage? res = await client.SendAsync(request);

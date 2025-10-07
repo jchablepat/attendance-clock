@@ -285,10 +285,7 @@ namespace VTACheckClock.Services
             }
         }
 
-        public async ValueTask DisposeAsync()
-        {
-            await DisconnectAsync();
-        }
+        public async ValueTask DisposeAsync() => await DisconnectAsync();
 
         public async Task ReloadConnectionAsync()
         {

@@ -5,7 +5,7 @@ namespace VTACheckClock.ViewModels
 {
     class EventPromptViewModel : ViewModelBase
     {
-        private TimeSpan shift_max;
+        private readonly TimeSpan shift_max;
         private string _message = "Han transcurrido más de xxx horas con xxx minutos desde su entrada.";
         public string Message
         {

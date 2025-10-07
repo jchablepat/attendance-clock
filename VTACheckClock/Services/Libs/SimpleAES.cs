@@ -13,8 +13,8 @@ namespace VTACheckClock.Services.Libs
     public class SimpleAES
     {
         // Asegúrate de que Key y Vector están definidos correctamente en tu clase
-        private readonly byte[] Key = { 111, 99, 86, 119, 105, 97, 101, 48, 101, 86, 115, 116, 99, 77, 56, 45, 84, 109, 84, 114, 49, 101, 40, 105, 120, 102, 111, 83, 41, 46, 50, 4 };
-        private readonly byte[] Vector = { 121, 115, 110, 84, 101, 65, 95, 83, 86, 116, 116, 110, 97, 100, 101, 99 };
+        private readonly byte[] Key = [111, 99, 86, 119, 105, 97, 101, 48, 101, 86, 115, 116, 99, 77, 56, 45, 84, 109, 84, 114, 49, 101, 40, 105, 120, 102, 111, 83, 41, 46, 50, 4];
+        private readonly byte[] Vector = [121, 115, 110, 84, 101, 65, 95, 83, 86, 116, 116, 110, 97, 100, 101, 99];
         private readonly ICryptoTransform EncryptorTransform;
         private readonly ICryptoTransform DecryptorTransform;
         private readonly UTF8Encoding UTFEncoder;
@@ -130,7 +130,7 @@ namespace VTACheckClock.Services.Libs
         public static byte[] ToLiteralBytes(string str)
         {
             if (string.IsNullOrEmpty(str) || (str.Length <= 0)) {
-                return Array.Empty<byte>();
+                return [];
             } else {
                 byte[] byteArr = new byte[str.Length / 3];
                 int i = 0;
@@ -230,7 +230,7 @@ namespace VTACheckClock.Services.Libs
         public static byte[] ToHexBytes(string hex_str)
         {
             if (string.IsNullOrEmpty(hex_str) || (hex_str.Length <= 0)) {
-                return Array.Empty<byte>();
+                return [];
             } else {
                 byte[] byteArr = new byte[hex_str.Length / 2];
                 int i = 0;

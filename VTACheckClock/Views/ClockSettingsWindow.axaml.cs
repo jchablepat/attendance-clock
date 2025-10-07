@@ -121,11 +121,11 @@ namespace VTACheckClock.Views
             var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions {
                 Title = "Seleccionar imagen",
                 AllowMultiple = false,
-                FileTypeFilter = new FilePickerFileType[] {
+                FileTypeFilter = [
                     new("Archivos de imagen") {
-                        Patterns = new[] { "*.jpg", "*.jpeg", "*.png", "*.gif" }
+                        Patterns = ["*.jpg", "*.jpeg", "*.png", "*.gif"]
                     }
-                }
+                ]
             });
 
             if (files.Count >= 1)

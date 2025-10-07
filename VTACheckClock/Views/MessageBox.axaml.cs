@@ -65,7 +65,7 @@ namespace VTACheckClock.Views
                         Background = Brushes.LightGray
                     };
 
-                    btn.Click += (object? sender, RoutedEventArgs e) => {
+                    btn.Click += (sender, e) => {
                         res = r;
                         msgbox.Close();
                     };

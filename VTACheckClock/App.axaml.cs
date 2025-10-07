@@ -8,6 +8,7 @@ using System;
 using System.Net.Http;
 using System.Reactive;
 using VTACheckClock.Services;
+using VTACheckClock.Services.Audit;
 using VTACheckClock.Services.Auth;
 using VTACheckClock.Services.Libs;
 using VTACheckClock.ViewModels;
@@ -35,8 +36,8 @@ namespace VTACheckClock
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             Exception? exception = e.ExceptionObject as Exception;
-            // Registra o muestra la excepci髇 en el registro de eventos, archivo de registro, etc.
-            log.Error(exception, "Excepci髇 no controlada: ");
+            // Registra o muestra la excepci贸n en el registro de eventos, archivo de registro, etc.
+            log.Error(exception, "Excepci贸n no controlada: ");
         }
 
         public override void OnFrameworkInitializationCompleted()
@@ -52,9 +53,17 @@ namespace VTACheckClock
             services.AddSingleton<HttpClient>();
             services.AddSingleton<IAuthenticationService, AuthenticationService>();
             services.AddSingleton<SignalRClient>();
+            services.AddSingleton<IRealtimeService, RealtimeService>();
             services.AddSingleton<TimeChangeAuditService>();
+            services.AddSingleton<UIService>();
+            services.AddSingleton<ClockService>();
+            services.AddSingleton<ILoggingService, LoggingService>();
 
             ServiceProvider = services.BuildServiceProvider();
+
+            // Inicializar el servicio de logging (NLog + Seq)
+            var logging = ServiceProvider.GetRequiredService<ILoggingService>();
+            logging.Initialize();
 
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
@@ -86,10 +95,12 @@ namespace VTACheckClock
 
                 desktop.Exit += (sender, args) =>
                 {
-                    log.Warn("La aplicaci髇 ha finalizado.");
+                    log.Warn("La aplicaci贸n ha finalizado.");
+                    LogManager.Shutdown();
+
                     if (!GlobalVars.IsRestart)
                     {
-                        // Aseg鷕ate de que la aplicaci髇 se cierre completamente
+                        // Aseg煤rate de que la aplicaci贸n se cierre completamente
                         Environment.Exit(0);
                     }
                 };

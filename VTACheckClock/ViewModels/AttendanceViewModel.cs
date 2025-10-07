@@ -1,13 +1,7 @@
-﻿using Avalonia.Controls;
-using Avalonia.Data;
-using ReactiveUI;
+﻿using ReactiveUI;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Reactive;
-using System.Threading.Tasks;
-using System.Windows.Input;
 using VTACheckClock.Models;
 using VTACheckClock.Services;
 
@@ -16,10 +10,10 @@ namespace VTACheckClock.ViewModels
     class AttendanceViewModel : ViewModelBase
     {
         private DateTimeOffset _startDate, _endDate;
-        private ObservableCollection<AttendanceRecord> _attendances = new();
-        public ObservableCollection<OfficeData> Offices { get; } = new();
+        private ObservableCollection<AttendanceRecord> _attendances = [];
+        public ObservableCollection<OfficeData> Offices { get; } = [];
         private int _selOffice = -1;
-        private ClockSettings? c_settings;
+        private readonly ClockSettings? c_settings;
 
         public AttendanceViewModel()
         {
@@ -30,8 +24,8 @@ namespace VTACheckClock.ViewModels
             EndDate = DateTime.Now;
 
             // Inicializar colección de asistencias
-            Attendances = new ObservableCollection<AttendanceRecord>();
-            Offices = new ObservableCollection<OfficeData>();
+            Attendances = [];
+            Offices = [];
             GetOffices();
 
             // Configurar comando para generar reporte

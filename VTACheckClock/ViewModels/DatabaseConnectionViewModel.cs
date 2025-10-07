@@ -157,7 +157,8 @@ namespace VTACheckClock.ViewModels
 
             if (DBAccess.DBConnection.TestConnection(db_settings) && RegAccess.SetDBConSettings(db_settings)) {
                 await ShowMessage("Servicio Web configurado", "La configuración de conexión al Servicio Web se ha guardado exitosamente.");
-                (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.Windows?.LastOrDefault()?.Close(true);
+                var openedWindows = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.Windows.ToList();
+                openedWindows?.LastOrDefault()?.Close(true);
                 
                 return true;
             } else {

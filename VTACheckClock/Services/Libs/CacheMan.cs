@@ -28,7 +28,7 @@ namespace VTACheckClock.Services.Libs
     public class CacheFileData
     {
         private CacheType _file_type;
-        private string _file_uuid;
+        private readonly string _file_uuid;
 
         public int file_offid { get; set; }
         public DateTime file_time { get; set; }
@@ -119,7 +119,7 @@ namespace VTACheckClock.Services.Libs
         private CacheFileData? old_employees;
         private CacheFileData? old_history;
         private CacheFileData? old_punches;
-        private OfficeData? work_office;
+        private readonly OfficeData? work_office;
         private List<CacheFileData>? OldCachedPunches;
 
         /// <summary>
@@ -367,7 +367,8 @@ namespace VTACheckClock.Services.Libs
                 }
 
                 return true;
-            } catch {
+            } catch(Exception ex) {
+                log.Warn("CopyPunches error: " + ex.Message);
                 return false;
             }
         }
@@ -471,7 +472,8 @@ namespace VTACheckClock.Services.Libs
                 }
 
                 return true;
-            } catch {
+            } catch(Exception ex) {
+                log.Warn("PurgeOldCache error: " + ex.Message);
                 return false;
             }
         }
@@ -518,7 +520,8 @@ namespace VTACheckClock.Services.Libs
                                 }
                             );
                         }
-                    } catch {
+                    } catch(Exception ex) {
+                        log.Warn("RescuePreviousPunches error: " + ex.Message);
                         continue;
                     }
                 }
@@ -564,7 +567,8 @@ namespace VTACheckClock.Services.Libs
                 File.WriteAllLines(file_data.file_info.FullName, [(FixedFileHeader + CommonProcs.EnDeCapsulateTxt(header_line, true))]);
 
                 return true;
-            } catch {
+            } catch(Exception ex) {
+                log.Warn("CreateCacheFile error: " + ex.Message);
                 file_data = null;
                 return false;
             }
@@ -603,10 +607,7 @@ namespace VTACheckClock.Services.Libs
         {
             el_file.Refresh();
 
-            if ((!File.Exists(el_file.FullName)) || (el_file.Length <= 0))
-            {
-                return null;
-            }
+            if ((!File.Exists(el_file.FullName)) || (el_file.Length <= 0)) return null;
 
             try {
                 string? header_line = string.Empty;
@@ -787,8 +788,9 @@ namespace VTACheckClock.Services.Libs
                 return true;
             }
 
-            catch
+            catch(Exception ex)
             {
+                log.Warn("PurgeCachedPunches error: " + ex.Message);
                 return false;
             }
         }
@@ -904,7 +906,8 @@ namespace VTACheckClock.Services.Libs
                 employees_file = fmds_file;
 
                 return true;
-            } catch {
+            } catch(Exception ex) {
+                log.Warn("SaveEmployees error: " + ex.Message);
                 return false;
             }
         }
@@ -942,7 +945,8 @@ namespace VTACheckClock.Services.Libs
                 employees_file = fmds_file;
 
                 return Task.FromResult(true);
-            } catch {
+            } catch(Exception ex) {
+                log.Warn("SaveEmployeesAsync error: " + ex.Message);
                 return Task.FromResult(false);
             }
         }
@@ -968,7 +972,8 @@ namespace VTACheckClock.Services.Libs
 
                     la_resp.Rows.Add(int.Parse(emp_parts[0]), emp_parts[1], emp_parts[2], emp_parts[3], emp_parts[4], emp_parts[5], emp_parts[6]);
                 }
-            } catch {
+            } catch(Exception ex) {
+                log.Warn("RetrieveEmployees error: " + ex.Message);
                 la_resp.Rows.Clear();
             }
 
@@ -1022,7 +1027,8 @@ namespace VTACheckClock.Services.Libs
                 history_file = hist_file;
 
                 return Task.FromResult(true);
-            } catch {
+            } catch(Exception ex) {
+                log.Warn("SaveHistory error: " + ex.Message);
                 return Task.FromResult(false);
             }
         }

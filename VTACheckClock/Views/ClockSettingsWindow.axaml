@@ -185,8 +185,22 @@
 							</StackPanel>
 						</StackPanel>
 
-						<StackPanel Background="White" Margin="0 15 0 0">
-							<TextBlock Text="Servidor de WebSockets:" FontSize="18" FontWeight="Bold" />
+					<StackPanel Background="White" Margin="0 15 0 0">
+						<HeaderedContentControl Header="Logs (Seq)">
+							<StackPanel Background="White" Spacing="8">
+								<StackPanel Orientation="Horizontal" Margin="0 6 0 10">
+									<TextBlock Text="Seq URL:" Padding="10 6 0 0" Width="90" />
+									<TextBox Name="txtSeqUrl" Text="{ Binding SeqUrl }" Width="400" Watermark="http://localhost:5341" />
+								</StackPanel>
+
+								<StackPanel Orientation="Horizontal">
+									<TextBlock Text="API Key:" Padding="10 6 0 0" Width="90" />
+									<TextBox Name="txtSeqApiKey" Text="{ Binding SeqApiKey }" Width="300" Watermark="optional-api-key" />
+								</StackPanel>
+							</StackPanel>
+						</HeaderedContentControl>
+
+						<TextBlock Text="Servidor de WebSockets:" FontSize="18" FontWeight="Bold" />
 				
 							<StackPanel Background="White" Orientation="Horizontal" Margin="0 10 0 10">
 								<TextBlock Text="Emp Host:" Padding="25 6 0 0" Width="100" />

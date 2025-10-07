@@ -1,14 +1,9 @@
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Interactivity;
 using Avalonia.ReactiveUI;
 using ReactiveUI;
 using System;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Text.RegularExpressions;
 using VTACheckClock.Helpers;
-using VTACheckClock.Services;
 using VTACheckClock.ViewModels;
 
 namespace VTACheckClock.Views
@@ -61,7 +56,7 @@ namespace VTACheckClock.Views
             }
         }
 
-        private bool IsNumericKey(Key key) {
+        private static bool IsNumericKey(Key key) {
             // Verificar si la tecla presionada es numérica
             return key >= Key.D0 && key <= Key.D9 || key >= Key.NumPad0 && key <= Key.NumPad9;
         }

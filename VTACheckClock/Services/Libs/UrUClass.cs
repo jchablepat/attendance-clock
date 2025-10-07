@@ -108,30 +108,28 @@ namespace VTACheckClock.Services.Libs
         /// </summary>
         public static void GetStatus()
         {
-            using (Tracer tracer = new Tracer("UrUClass::GetStatus"))
+            using Tracer tracer = new("UrUClass::GetStatus");
+            Constants.ResultCode result = CurrentReader.GetStatus();
+
+            if (result != Constants.ResultCode.DP_SUCCESS)
             {
-                Constants.ResultCode result = CurrentReader.GetStatus();
+                Reset = true;
+                throw new Exception("" + result);
+            }
 
-                if (result != Constants.ResultCode.DP_SUCCESS)
-                {
-                    Reset = true;
-                    throw new Exception("" + result);
-                }
-
-                if (CurrentReader.Status.Status == Constants.ReaderStatuses.DP_STATUS_BUSY)
-                {
-                    Log.Warn("Lector ocupado... esperando 50 milisegundos.");
-                    Thread.Sleep(50);
-                }
-                else if (CurrentReader.Status.Status == Constants.ReaderStatuses.DP_STATUS_NEED_CALIBRATION)
-                {
-                    Log.Warn("Calibrando lector.");
-                    CurrentReader.Calibrate();
-                }
-                else if (CurrentReader.Status.Status != Constants.ReaderStatuses.DP_STATUS_READY)
-                {
-                    throw new Exception("Reader Status - " + CurrentReader.Status.Status);
-                }
+            if (CurrentReader.Status.Status == Constants.ReaderStatuses.DP_STATUS_BUSY)
+            {
+                Log.Warn("Lector ocupado... esperando 50 milisegundos.");
+                Thread.Sleep(50);
+            }
+            else if (CurrentReader.Status.Status == Constants.ReaderStatuses.DP_STATUS_NEED_CALIBRATION)
+            {
+                Log.Warn("Calibrando lector.");
+                CurrentReader.Calibrate();
+            }
+            else if (CurrentReader.Status.Status != Constants.ReaderStatuses.DP_STATUS_READY)
+            {
+                throw new Exception("Reader Status - " + CurrentReader.Status.Status);
             }
         }
 
@@ -142,27 +140,27 @@ namespace VTACheckClock.Services.Libs
         /// <returns>True si la calidad de la captura es suficientemente aceptable.</returns>
         public static bool CheckCaptureResult(CaptureResult captureResult)
         {
-            using (Tracer tracer = new("UrUClass::CheckCaptureResult"))
+            using Tracer tracer = new("UrUClass::CheckCaptureResult");
+            if (captureResult.Data == null || captureResult.ResultCode != Constants.ResultCode.DP_SUCCESS)
             {
-                if (captureResult.Data == null || captureResult.ResultCode != Constants.ResultCode.DP_SUCCESS)
+                if (captureResult.ResultCode != Constants.ResultCode.DP_SUCCESS)
                 {
-                    if (captureResult.ResultCode != Constants.ResultCode.DP_SUCCESS)
-                    {
-                        Reset = true;
-                        throw new Exception(captureResult.ResultCode.ToString());
-                    }
-
-                    // Send message if quality shows fake finger
-                    if (captureResult.Quality != Constants.CaptureQuality.DP_QUALITY_CANCELED)
-                    {
-                        throw new Exception("Quality - " + captureResult.Quality);
-                    }
-
-                    return false;
+                    Reset = true;
+                    Log.Warn("Error en la captura de huella: " + captureResult.ResultCode.ToString());
+                    throw new Exception(captureResult.ResultCode.ToString());
                 }
 
-                return true;
+                // Send message if quality shows fake finger
+                if (captureResult.Quality != Constants.CaptureQuality.DP_QUALITY_CANCELED)
+                {
+                    Log.Warn("Calidad de huella no aceptable: " + captureResult.Quality);
+                    throw new Exception("Quality - " + captureResult.Quality);
+                }
+
+                return false;
             }
+
+            return true;
         }
 
         /// <summary>
@@ -171,25 +169,25 @@ namespace VTACheckClock.Services.Libs
         /// <returns>True si la operación fue exitosa.</returns>
         public static bool CaptureFingerAsync()
         {
-            using (Tracer tracer = new Tracer("UrUClass::CaptureFingerAsync"))
+            using Tracer tracer = new("UrUClass::CaptureFingerAsync");
+            try
             {
-                try
+                GetStatus();
+                Constants.ResultCode captureResult = CurrentReader.CaptureAsync(Constants.Formats.Fid.ISO, Constants.CaptureProcessing.DP_IMG_PROC_DEFAULT, CurrentReader.Capabilities.Resolutions[0]);
+
+                if (captureResult != Constants.ResultCode.DP_SUCCESS)
                 {
-                    GetStatus();
-                    Constants.ResultCode captureResult = CurrentReader.CaptureAsync(Constants.Formats.Fid.ISO, Constants.CaptureProcessing.DP_IMG_PROC_DEFAULT, CurrentReader.Capabilities.Resolutions[0]);
-
-                    if (captureResult != Constants.ResultCode.DP_SUCCESS)
-                    {
-                        Reset = true;
-                        throw new Exception("" + captureResult);
-                    }
-
-                    return true;
-                } catch(Exception ex) {
-                    Log.Warn("Error del Lector de huella en el evento <CaptureFingerAsync>:  " + ex.Message);
-                    //Show(null, "Lector de Huella", "Error:  " + ex.Message, MessageBoxButtons.Ok);
-                    return false;
+                    Reset = true;
+                    throw new Exception("" + captureResult);
                 }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log.Warn("Error del Lector de huella en el evento <CaptureFingerAsync>:  " + ex.Message);
+                //Show(null, "Lector de Huella", "Error:  " + ex.Message, MessageBoxButtons.Ok);
+                return false;
             }
         }
 

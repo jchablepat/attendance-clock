@@ -86,7 +86,7 @@ namespace VTACheckClock.Services
 
             byte[] gzBuffer = Convert.FromBase64String(compressedText);
 
-            using MemoryStream ms = new MemoryStream();
+            using MemoryStream ms = new();
             int msgLength = BitConverter.ToInt32(gzBuffer, 0);
             ms.Write(gzBuffer, 4, gzBuffer.Length - 4);
 
@@ -160,7 +160,7 @@ namespace VTACheckClock.Services
                 return str;
             }
 
-            return str.First().ToString().ToUpper() + str.Substring(1).ToLower();
+            return str.First().ToString().ToUpper() + str[1..].ToLower();
         }
 
         /// <summary>
@@ -173,7 +173,7 @@ namespace VTACheckClock.Services
             DateTime dateTime;
             try {
                 if (!string.IsNullOrWhiteSpace(la_cadena)) {
-                    int date_year = int.Parse(la_cadena.Substring(0, 4));
+                    int date_year = int.Parse(la_cadena[..4]);
                     int date_month = int.Parse(la_cadena.Substring(4, 2));
                     int date_day = int.Parse(la_cadena.Substring(6, 2));
                     int date_hour = int.Parse(la_cadena.Substring(8, 2));
@@ -218,9 +218,9 @@ namespace VTACheckClock.Services
                 return null;
             }
 
-            List<object> la_list = new() {
+            List<object> la_list = [
                 el_obj
-            };
+            ];
 
             DataTable? dt = ListToDt(la_list);
 
@@ -352,7 +352,7 @@ namespace VTACheckClock.Services
         /// <returns>Objeto DateTime con el valor representado por la cadena de texto de entrada o, de no ser válida ésta, el valor DateTime.MinValue.</returns>
         public static DateTime NewDateTimeParse(string str)
         {
-            DateTime.TryParse(str, out DateTime la_resp);
+            _ = DateTime.TryParse(str, out DateTime la_resp);
 
             return la_resp;
         }
@@ -444,7 +444,7 @@ namespace VTACheckClock.Services
         public static ScantResponse SyncWatches(ScantRequest req)
         {
             try {
-                string[] comm_data = req.Question.Split(new char[] { '|' });
+                string[] comm_data = req.Question.Split(['|']);
                 int el_result = DBMethods.RegisterClientTime(comm_data[0], int.Parse(comm_data[1]), Convert.ToDateTime(comm_data[2]));
 
                 return CommonObjs.BeBlunt(el_result == 0);
@@ -456,7 +456,7 @@ namespace VTACheckClock.Services
         public static async Task<ScantResponse> SyncWatchesAsync(ScantRequest req)
         {
             try {
-                string[] comm_data = req.Question.Split(new char[] { '|' });
+                string[] comm_data = req.Question.Split(['|']);
                 int el_result = await DBMethods.RegisterClientTimeAsync(comm_data[0], int.Parse(comm_data[1]), Convert.ToDateTime(comm_data[2]));
 
                 return CommonObjs.BeBlunt(el_result == 0);
@@ -496,7 +496,7 @@ namespace VTACheckClock.Services
         private static List<ParamData> SysParams()
         {
             DataTable dt = GetParams();
-            List<ParamData> la_resp = new();
+            List<ParamData> la_resp = [];
 
             foreach (DataRow la_row in dt.Rows)
             {
@@ -517,7 +517,7 @@ namespace VTACheckClock.Services
         /// <returns>Listado de oficinas.</returns>
         public static List<OfficeData> GetOffices(ScantRequest la_office)
         {
-            List<OfficeData> la_resp = new();
+            List<OfficeData> la_resp = [];
             DataTable dt = DBMethods.GetOffice(int.Parse(la_office.Question ?? "0"));
 
             foreach (DataRow dr in dt.Rows)
@@ -560,8 +560,8 @@ namespace VTACheckClock.Services
         /// <returns>Colección con los avisos correspondientes a la oficina especificada.</returns>
         public static List<NoticeData> GetOfficeNotices(ScantRequest la_req)
         {
-            List<NoticeData> la_resp = new();
-            int.TryParse(la_req.Question, out int la_office);
+            List<NoticeData> la_resp = [];
+            _ = int.TryParse(la_req.Question, out int la_office);
 
             DataTable dt = DBMethods.GetNoticesInfo(la_office);
 
@@ -580,8 +580,8 @@ namespace VTACheckClock.Services
 
         public static async Task<List<NoticeData>> GetOfficeNoticesAsync(ScantRequest la_req)
         {
-            List<NoticeData> la_resp = new();
-            int.TryParse(la_req.Question, out int la_office);
+            List<NoticeData> la_resp = [];
+            _ = int.TryParse(la_req.Question, out int la_office);
 
             DataTable dt = await DBMethods.GetNoticesInfoAsync(la_office);
 
@@ -741,7 +741,7 @@ namespace VTACheckClock.Services
 
                     return GlobalVars.sysParams != null && GlobalVars.sysParams.Count >= 1;
                 } else {
-                    GlobalVars.sysParams = DtToList<ParamData>(ListToDt(SysParams().Cast<object>().ToList()));
+                    GlobalVars.sysParams = DtToList<ParamData>(ListToDt([.. SysParams().Cast<object>()]));
                     return RegAccess.SaveSysParams(PackParams(GlobalVars.sysParams));
                 }
             } catch {
@@ -757,12 +757,11 @@ namespace VTACheckClock.Services
         public static string PackParams(List<ParamData>? los_params)
         {
             int el_idx = 0;
-            string the_param = string.Empty;
             string[] param_strs = new string[los_params.Count];
 
             foreach (ParamData param in los_params)
             {
-                the_param = param.number.ToString() + '|' + param.value;
+                string the_param = param.number.ToString() + '|' + param.value;
                 param_strs[el_idx] = the_param;
                 el_idx++;
             }
@@ -777,13 +776,13 @@ namespace VTACheckClock.Services
         /// <returns>Lista de parámetros.</returns>
         public static List<ParamData> UnpackParams(string? params_str)
         {
-            List<ParamData> la_resp = new List<ParamData>();
-            string[] param_strs = params_str.Split(new char[] { '§' });
+            List<ParamData> la_resp = [];
+            string[] param_strs = params_str.Split(['§']);
 
             foreach (string str in param_strs)
             {
-                string[] param_vals = str.Split(new char[] { '|' });
-                int.TryParse(param_vals[0], out int el_num);
+                string[] param_vals = str.Split(['|']);
+                _ = int.TryParse(param_vals[0], out int el_num);
 
                 if (el_num > 0)
                 {
@@ -818,7 +817,7 @@ namespace VTACheckClock.Services
         /// <returns>El valor del parámetro solicitado.</returns>
         public static int ParamInt(int el_param)
         {
-            int.TryParse(ParamStr(el_param), out int la_resp);
+            _ = int.TryParse(ParamStr(el_param), out int la_resp);
 
             return la_resp;
         }
@@ -845,7 +844,7 @@ namespace VTACheckClock.Services
         /// <returns>El valor del parámetro solicitado.</returns>
         public static DateTime ParamDTime(int el_param)
         {
-            DateTime.TryParse(ParamStr(el_param), out DateTime la_resp);
+            _ = DateTime.TryParse(ParamStr(el_param), out DateTime la_resp);
 
             return la_resp;
         }
@@ -857,7 +856,7 @@ namespace VTACheckClock.Services
         /// <returns>El valor del parámetro solicitado.</returns>
         public static TimeSpan ParamTSpan(int el_param)
         {
-            TimeSpan.TryParse(ParamStr(el_param), out TimeSpan la_resp);
+            _ = TimeSpan.TryParse(ParamStr(el_param), out TimeSpan la_resp);
 
             return la_resp;
         }
@@ -897,7 +896,7 @@ namespace VTACheckClock.Services
 
                 return la_resp;
             } catch {
-                return Array.Empty<string>();
+                return [];
             }
         }
 
@@ -969,7 +968,7 @@ namespace VTACheckClock.Services
 
             foreach (DataRow dr in priv_dt.Rows)
             {
-                int.TryParse(dr[0].ToString(), out int el_priv);
+                _ = int.TryParse(dr[0].ToString(), out int el_priv);
                 la_resp[iii] = el_priv;
                 iii++;
             }
@@ -987,7 +986,7 @@ namespace VTACheckClock.Services
             try {
                 GlobalVars.UserPrivileges = ParseUsrPrivs(GetUsrPrivs(new ScantRequest { Question = GlobalVars.mySession.usrname }));
             } catch {
-                GlobalVars.UserPrivileges = new int[1] { 0 };
+                GlobalVars.UserPrivileges = [0];
             }
         }
 

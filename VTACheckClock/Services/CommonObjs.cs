@@ -11,27 +11,26 @@ using VTACheckClock.Services.Libs;
 
 namespace VTACheckClock.Services
 {
-    class CommonObjs
+    public class CommonObjs
     {
         private static readonly Logger log = LogManager.GetLogger("app_logger");
 
-        public class RemoteTime
+        public class ClockTimeData
         {
             public string? TimeString { get; set; }
             public DateTime CurrentTime { get; set; }
         }
 
         /// <summary>
-        /// Devuelve la hora actual. Si no se puede obtener la hora de Internet, devuelve la hora local actual del sistema.
+        /// Devuelve la hora actual de Internet. Si no se puede obtener la hora de Internet, devuelve la hora local actual del sistema.
         /// </summary>
-        public static async Task<RemoteTime> GetTimeNow() {
+        public static async Task<ClockTimeData> GetTimeNow() {
             var time = await GetDateTime();
 
-            if (time == DateTime.MinValue) {
-                time = DateTime.Now;
-            }
+            if (time == DateTime.MinValue) time = DateTime.Now;
 
-            return new RemoteTime {
+            return new ClockTimeData
+            {
                 CurrentTime = time,
                 TimeString = time.ToString("HH:mm:ss")
             };
@@ -90,7 +89,8 @@ namespace VTACheckClock.Services
                 var timeZoneResponse = await httpClient.GetStringAsync(timeZoneUrl);
                 var timeZoneData = JObject.Parse(timeZoneResponse);
                 return timeZoneData["zoneName"].ToString();
-            } catch {
+            } catch(Exception ex) {
+                log.Warn("Error al obtener la zona horaria desde Internet: {0}", ex.Message);
                 return TimeZoneInfo.Local.Id;
             }
         }
@@ -220,7 +220,15 @@ namespace VTACheckClock.Services
         /// <summary>
         /// Devuelve la fecha actual en formato largo.
         /// </summary>
-        public static string TodayLongDate => (CommonProcs.UpperFirst(DateTime.Now.ToLongDateString()) + ".");
+        public static string TodayLongDate => CommonProcs.UpperFirst(DateTime.Now.ToLongDateString()) + ".";
+
+        /// <summary>
+        /// Formats the specified <see cref="DateTime"/> as a long date string with the first letter capitalized and a
+        /// period appended.
+        /// </summary>
+        /// <param name="date">The <see cref="DateTime"/> to format.</param>
+        /// <returns>A string representing the formatted long date with the first letter capitalized and ending with a period.</returns>
+        public static string LongDateFormat(DateTime date) => CommonProcs.UpperFirst(date.ToLongDateString()) + ".";
 
         /// <summary>
         /// Crea un DataTable con información del error en la consulta de la base de datos.
@@ -289,17 +297,14 @@ namespace VTACheckClock.Services
         /// <returns>Objeto con la respuesta empaquetada.</returns>
         public static ScantResponse BeBlunt(bool la_resp)
         {
-            return new ScantResponse { ack = la_resp };
+            return new ScantResponse { Ack = la_resp };
         }
 
         /// <summary>
         /// Genera una clave API para el acceso a un hub de SignalR.
         /// </summary>
-        /// <param name="SignalRHubUrl"></param>
-        /// <param name="SignalRHubName"></param>
-        /// <param name="SignalRMethodName"></param>
         /// <returns></returns>
-        public static async Task<string> GenerateSignalRApiKeyAsync(string SignalRHubUrl, string SignalRHubName, string SignalRMethodName)
+        public static async Task<string> GenerateSignalRApiKeyAsync()
         {
             // Pseudocódigo:
             // 1. Generar un array de bytes aleatorios usando RandomNumberGenerator.

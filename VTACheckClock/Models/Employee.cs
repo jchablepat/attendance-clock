@@ -1,14 +1,13 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace VTACheckClock.Models
 {
     class Employee
     {
        private static int nextIndex = 0;
-       private static readonly Dictionary<DateTime, int> EventCountByDate = new();
+       private static readonly Dictionary<DateTime, int> EventCountByDate = [];
 
        public int Index { get; set; } 
        public int EmpNo { get; set; }
@@ -33,15 +32,15 @@ namespace VTACheckClock.Models
 
         private void UpdateEventCount()
         {
-            try { 
-                DateTime.TryParse(EventTime, out DateTime EventDateTime);
+            try {
+                _ = DateTime.TryParse(EventTime, out DateTime EventDateTime);
                 DateTime eventDate = EventDateTime.Date;
 
-                if (!EventCountByDate.ContainsKey(eventDate))
+                if (!EventCountByDate.TryGetValue(eventDate, out int value))
                 {
                     EventCountByDate[eventDate] = 1;
                 } else {
-                    EventCountByDate[eventDate]++;
+                    EventCountByDate[eventDate] = ++value;
                 }
 
                 EmpNo = EventCountByDate[eventDate];

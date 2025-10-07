@@ -14,7 +14,6 @@ using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using VTA_Clock;
 using VTACheckClock.Models;
 using VTACheckClock.Services;
 using VTACheckClock.Services.Libs;
@@ -23,13 +22,12 @@ namespace VTACheckClock.ViewModels
 {
     class WebsocketLoggerViewModel : ViewModelBase
     {
-        private readonly WSClient _WSClient = new();
+        private readonly IRealtimeService _realtime;
         //private readonly Logger log = LogManager.GetLogger("app_logger");
         private FileSystemWatcher? _watcher;
         readonly string logFilePath = Path.Combine(GlobalVars.AppWorkPath, "logs");
         private string _logText = "Waiting for log changes...";
         private string? _searchText;
-        private readonly MainSettings? m_settings;
 
         public ObservableCollection<LogEntry> LogEntries { get; } = [];
         public ObservableCollection<LogEntry> SearchResults { get; } = [];
@@ -54,8 +52,7 @@ namespace VTACheckClock.ViewModels
             .Subscribe(DoSearch!);
 
             LogEntries.CollectionChanged += LogEntries_CollectionChanged;
-
-            m_settings = RegAccess.GetMainSettings() ?? new MainSettings();
+            _realtime = App.ServiceProvider.GetRequiredService<IRealtimeService>();
         }
 
         public string LogText
@@ -195,15 +192,7 @@ namespace VTACheckClock.ViewModels
 
         private async Task ReloadWS()
         {
-            if (m_settings.UsePusher) {
-                await _WSClient.ReloadConnection();
-            }
-            else
-            {
-                // Obtener el servicio directamente
-                var SignalRClient = App.ServiceProvider.GetRequiredService<SignalRClient>();
-                await SignalRClient.ReloadConnectionAsync();
-            }
+            await _realtime.ReloadAsync();
             //using StreamWriter sw = File.AppendText(logFilePath + "\\logss.txt");
             //sw.WriteLine("This is the new text");
         }

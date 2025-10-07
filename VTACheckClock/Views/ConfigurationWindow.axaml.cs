@@ -1,7 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.ReactiveUI;
 using ReactiveUI;
-using System;
 using System.Threading.Tasks;
 using VTACheckClock.Helpers;
 using VTACheckClock.ViewModels;

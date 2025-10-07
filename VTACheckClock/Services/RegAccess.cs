@@ -1,4 +1,4 @@
-﻿using Microsoft.Win32;
+using Microsoft.Win32;
 using NLog;
 using System;
 using System.Reactive;
@@ -55,7 +55,9 @@ namespace VTACheckClock.Services
                             SignalRHubUrl = GetRegValue("signalRHubUrl"),
                             SignalRHubName = GetRegValue("signalRHubName"),
                             SignalRMethodName = GetRegValue("signalRMethodName"),
-                            SignalRApiKey = GetRegValue("signalRApiKey")
+                            SignalRApiKey = GetRegValue("signalRApiKey"),
+                            SeqUrl = GetRegValue("seqUrl"),
+                            SeqApiKey = GetRegValue("seqApiKey")
                         };
 
                         la_key.Close();
@@ -199,7 +201,9 @@ namespace VTACheckClock.Services
                             SignalRHubUrl = GetRegValue("signalRHubUrl"),
                             SignalRHubName = GetRegValue("signalRHubName"),
                             SignalRMethodName = GetRegValue("signalRMethodName"),
-                            SignalRApiKey = GetRegValue("signalRApiKey")
+                            SignalRApiKey = GetRegValue("signalRApiKey"),
+                            SeqUrl = GetRegValue("seqUrl"),
+                            SeqApiKey = GetRegValue("seqApiKey")
                         };
 
                         if (GlobalVars.VTAttModule == 1) {
@@ -236,7 +240,7 @@ namespace VTACheckClock.Services
         /// <returns>Objeto con la información de la oficina configurada.</returns>
         public static OfficeData GetOffRegData()
         {
-            int.TryParse(GetRegValue("office_id"), out int off_id);
+            _ = int.TryParse(GetRegValue("office_id"), out int off_id);
 
             return new OfficeData {
                 Offid = off_id,
@@ -374,6 +378,8 @@ namespace VTACheckClock.Services
                         la_key.SetValue("db_name", aes_crypt.EncryptToBytes(msettings.Db_name));
                         la_key.SetValue("db_user", aes_crypt.EncryptToBytes(msettings.Db_user));
                         la_key.SetValue("db_pass", aes_crypt.EncryptToBytes(msettings.Db_pass));
+                        la_key.SetValue("seqUrl", aes_crypt.EncryptToBytes(msettings.SeqUrl));
+                        la_key.SetValue("seqApiKey", aes_crypt.EncryptToBytes(msettings.SeqApiKey));
 
                         if (GlobalVars.VTAttModule == 1) {
                             la_key.SetValue("clock_office", aes_crypt.EncryptToBytes(csettings.clock_office.ToString()));

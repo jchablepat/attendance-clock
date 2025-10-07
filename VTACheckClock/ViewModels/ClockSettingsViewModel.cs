@@ -1,4 +1,4 @@
-﻿using Avalonia;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data;
@@ -29,7 +29,8 @@ namespace VTACheckClock.ViewModels
         private string? _pathTmp = "", _logo = "", _ftpServe = "", _ftpPort = "", _ftpUser = "", _ftpPass = "",
             _server = "", _database = "", _dbUser = "", _dbPass = "", _clockUsr = "", _clockPass = "",
             _emp_host = "", _wsHost = "", _wsPort = "", _pusherAppId = "", _pusherKey = "", _pusherSecret = "",
-            _pusherCluster = "", _eventName = "", _clockUUID = "";
+            _pusherCluster = "", _eventName = "", _clockUUID = "",
+            _seqUrl = "", _seqApiKey = "";
 
         private string?  _mailServer = "", _mailPort = "", _mailSender = "", _mailPass = "", _mailRecipient = "";
         private bool _mailEnabled = false;
@@ -53,6 +54,8 @@ namespace VTACheckClock.ViewModels
         public TextBox? txtSignalRHubUrl { get; set; }
         public TextBox? txtSignalRHubName { get; set; }
         public TextBox? txtSignalRMethodName { get; set; }
+        public TextBox? txtSeqUrl { get; set; }
+        public TextBox? txtSeqApiKey { get; set; }
 
         public ClockSettingsViewModel()
         {
@@ -222,6 +225,18 @@ namespace VTACheckClock.ViewModels
         {
             get => _emp_host;
             set => this.RaiseAndSetIfChanged(ref _emp_host, value);
+        }
+
+        public string? SeqUrl
+        {
+            get => _seqUrl;
+            set => this.RaiseAndSetIfChanged(ref _seqUrl, value);
+        }
+
+        public string? SeqApiKey
+        {
+            get => _seqApiKey;
+            set => this.RaiseAndSetIfChanged(ref _seqApiKey, value);
         }
 
         public bool WebSocketEnabled
@@ -443,8 +458,8 @@ namespace VTACheckClock.ViewModels
             }
         }
 
-        public ObservableCollection<OfficeData> Offices { get; } = new();
-        public ObservableCollection<TimeZoneList> TimeZones { get; } = new();
+        public ObservableCollection<OfficeData> Offices { get; } = [];
+        public ObservableCollection<TimeZoneList> TimeZones { get; } = [];
         public ReactiveCommand<Unit, Unit> SetDefPathCommand { get; }
         public ReactiveCommand<Unit, Unit> GenerateUUIDCommand { get; }
 
@@ -464,7 +479,7 @@ namespace VTACheckClock.ViewModels
         public MainSettings? m_settings;
         public ClockSettings? c_settings;
         List<IdxObjs>? OfficesList;
-        private List<TimeZoneList> TimeZoneList = new();
+        private readonly List<TimeZoneList> TimeZoneList = [];
 
         /// <summary>
         /// Solicita y valida el inicio de sesión para este formulario.
@@ -537,6 +552,8 @@ namespace VTACheckClock.ViewModels
                 SignalRHubName = m_settings.SignalRHubName ?? string.Empty;
                 SignalRMethodName = m_settings.SignalRMethodName ?? string.Empty;
                 SignalRApiKey = m_settings.SignalRApiKey ?? string.Empty;
+                SeqUrl = m_settings.SeqUrl ?? string.Empty;
+                SeqApiKey = m_settings.SeqApiKey ?? string.Empty;
             }
             catch (Exception ex) {
                 Console.WriteLine(ex);
@@ -684,7 +701,7 @@ namespace VTACheckClock.ViewModels
 
             if (!int.TryParse(FTPPort, out int el_port))
             {
-                await ShowMessage("Puerto FTP inválido", "El puerto de conexión al Servidor FTP debe ser un número entero, favor de rectificar.", 350);
+                await ShowMessage($"Puerto FTP {el_port} inválido", "El puerto de conexión al Servidor FTP debe ser un número entero, favor de rectificar.", 350);
 
                 //    txtFTPPort.Text = string.Empty;
                 txtFTPPort.Focus();
@@ -798,8 +815,14 @@ namespace VTACheckClock.ViewModels
                 UsePusher = UsePusher,
                 SignalRHubUrl = SignalRHubUrl,
                 SignalRHubName = SignalRHubName,
-                SignalRMethodName = SignalRMethodName
+                SignalRMethodName = SignalRMethodName,
+                SeqUrl = SeqUrl,
+                SeqApiKey = SeqApiKey
             };
+
+            // Persistir parámetros de Seq
+            test_msettings.SeqUrl = SeqUrl;
+            test_msettings.SeqApiKey = SeqApiKey;
 
             if (GlobalVars.VTAttModule == 1)
             {

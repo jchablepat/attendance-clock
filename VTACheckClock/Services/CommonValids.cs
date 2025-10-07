@@ -14,6 +14,8 @@ namespace VTACheckClock.Services
 {
     class CommonValids
     {
+        private const string V = @"^[\b";
+
         #region Validaciones misceláneas
 
         /// <summary>
@@ -31,7 +33,7 @@ namespace VTACheckClock.Services
                 goto salte;
             }
 
-            string el_pattern = @"^[\b"; //Retroceso (se añade a todas las validaciones).
+            string el_pattern = V; //Retroceso (se añade a todas las validaciones).
             string hisp_letters = @"A-Za-zÑñáÁéÉíÍóÓúÚ´üÜ¨"; //Letras hispanas (se añade en algunas validaciones).
             string illegalChars = @"^[^\x00-\x07\x09-\x1f?*\"";<>|/]+$"; //Caracteres inválidos para rutas del sistema de archivos Windows.
 
@@ -110,7 +112,7 @@ namespace VTACheckClock.Services
                 DataTable? dt = CommonProcs.ObjToDt(CommonObjs.BeBlunt(CommonProcs.ValidateSession(el_login)));
                 ScantResponse response = CommonProcs.DtToList<ScantResponse>(dt)[0];
 
-                return response.ack;
+                return response.Ack;
             } catch {
                 return false;
             }
@@ -165,7 +167,7 @@ namespace VTACheckClock.Services
                 DataTable? dt = CommonProcs.ObjToDt(CommonProcs.WebServiceOnline());
                 ScantResponse response = CommonProcs.DtToList<ScantResponse>(dt)[0];
 
-                return response.ack;
+                return response.Ack;
             } catch {
                 return false;
             }
@@ -186,13 +188,14 @@ namespace VTACheckClock.Services
 
             List<PropertyInfo> las_props = [.. msettings.GetType().GetProperties()];
 
-            string[] nullableProperties = { 
+            string[] nullableProperties = [ 
                 "Employees_host", "Websocket_enabled", "Websocket_host", "Websocket_port", 
                 "Pusher_key", "Pusher_cluster", "Pusher_app_id", "Pusher_secret", "Event_name", 
                 "Ws_url", "Db_server", "Db_name", "Db_user", "Db_pass", "Logo", "mailEnabled",
                 "MailServer", "MailPort", "MailUser", "MailPass", "MailRecipient",
-                "UsePusher", "SignalRHubUrl", "SignalRHubName", "SignalRMethodName", "SignalRApiKey"
-            };
+                "UsePusher", "SignalRHubUrl", "SignalRHubName", "SignalRMethodName", "SignalRApiKey",
+                "SeqUrl", "SeqApiKey"
+            ];
 
             foreach (PropertyInfo la_prop in las_props)
             {
@@ -212,7 +215,7 @@ namespace VTACheckClock.Services
             {
                 las_props = [.. csettings.GetType().GetProperties()];
 
-                string[] nullProperties = { "clock_uuid", "clock_timezone" };
+                string[] nullProperties = ["clock_uuid", "clock_timezone"];
 
                 foreach (PropertyInfo la_prop in las_props)
                 {
@@ -372,7 +375,7 @@ namespace VTACheckClock.Services
         {
             try {
                 // Intentar múltiples destinos por si alguno está bloqueado
-                string[] hosts = { "8.8.8.8", "1.1.1.1", "208.67.222.222" };
+                string[] hosts = ["8.8.8.8", "1.1.1.1", "208.67.222.222"];
 
                 foreach (var host in hosts)
                 {

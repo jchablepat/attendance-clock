@@ -54,8 +54,8 @@ namespace VTACheckClock.ViewModels
 
         public async Task<int> Login()
         {
-            int.TryParse(Username, out int emp_id);
-            int found_idx = FMDCollection.FindIndex(f => (f.empid == emp_id) && (f.emppass.ToLower() == Password?.ToLower()));
+            _ = int.TryParse(Username, out int emp_id);
+            int found_idx = FMDCollection.FindIndex(f => (f.empid == emp_id) && (f.emppass.Equals(Password?.ToLower(), StringComparison.CurrentCultureIgnoreCase)));
             if(found_idx == -1) {
                 await ShowMessage("Claves incorrectas.", "El número de colaborador y/o la contraseña introducida son incorrectos. Por favor, rectifique e intente de nuevo.");
             }

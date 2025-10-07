@@ -74,11 +74,9 @@ namespace VTACheckClock.ViewModels
         private async Task ValidateConfigurations()
         {
             try {
-                var getTime = await CommonObjs.GetTimeNow();
-
                 GlobalVars.TimeZone = RegAccess.GetRegValue("clock_timezone");
                 GlobalVars.RunningTime.Start();
-                GlobalVars.StartTime = getTime.CurrentTime;
+                GlobalVars.StartTime = DateTime.Now;
                 GlobalVars.VTAttModule = 1;
                 string error_str = string.Empty;
                 await IsAppAlreadyRunningAsync();
@@ -102,7 +100,8 @@ namespace VTACheckClock.ViewModels
                     if (GlobalVars.BeOffline) {
                         Title = "Sin conexión a Internet.";
                         Message = error_str;
-                    } else {
+                    } 
+                    else {
                         if (NextStep == 0) {
                             Title = "Configuración errónea o incompleta";
                             Message = !string.IsNullOrEmpty(error_str) ? error_str: "No se ha llevado a cabo la configuración inicial de la aplicación o la misma se encuentra incompleta o dañada.\n\nA continuación, se le solicitará la información faltante, por lo que antes de continuar deberá tenerla a la mano o comunicarse con el administrador del sistema.\n\n¿Desea continuar?";
@@ -130,12 +129,12 @@ namespace VTACheckClock.ViewModels
                     GlobalVars.IsRestart = false;
 
                     UrUClass.LoadCurrentReader();
-                    if (!UrUClass.OpenReader())
-                    {
-                        Title = "No se pudo inicializar el Lector de Huellas.";
-                        Message = "No se ha encontrado ningún lector de huella dactilar o no se ha podido tener acceso al mismo.\n\nPruebe una de las siguientes opciones:\n\n1. Rectifique que el lector se encuentra debidamente conectado al equipo; deberá ver una luz azul en el lector que así lo indica.\n2. Asegúrese que los controladores necesarios han sido correctamente instalados.\n3. Conecte y desconecte el lector o conéctelo a un puerto USB diferente.\n4. Reinicie el equipo.\n\nSi el problema persiste, póngase en contacto con el administrador del sistema.";
-                        return;
-                    }
+                    //if (!UrUClass.OpenReader())
+                    //{
+                    //    Title = "No se pudo inicializar el Lector de Huellas.";
+                    //    Message = "No se ha encontrado ningún lector de huella dactilar o no se ha podido tener acceso al mismo.\n\nPruebe una de las siguientes opciones:\n\n1. Rectifique que el lector se encuentra debidamente conectado al equipo; deberá ver una luz azul en el lector que así lo indica.\n2. Asegúrese que los controladores necesarios han sido correctamente instalados.\n3. Conecte y desconecte el lector o conéctelo a un puerto USB diferente.\n4. Reinicie el equipo.\n\nSi el problema persiste, póngase en contacto con el administrador del sistema.";
+                    //    return;
+                    //}
 
                     if (CommonProcs.RetrieveParams()) {
                         try {

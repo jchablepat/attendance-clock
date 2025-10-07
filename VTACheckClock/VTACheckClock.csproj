@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
@@ -91,6 +91,7 @@
     <PackageReference Include="Microsoft.Win32.SystemEvents" Version="9.0.7" />
     <PackageReference Include="NAudio" Version="2.2.1" />
     <PackageReference Include="NLog" Version="5.4.0" />
+    <PackageReference Include="NLog.Targets.Seq" Version="4.0.2" />
     <PackageReference Include="Prism.Core" Version="9.0.537" />
     <PackageReference Include="PusherClient" Version="2.2.1" />
     <PackageReference Include="PusherServer" Version="5.0.0" />

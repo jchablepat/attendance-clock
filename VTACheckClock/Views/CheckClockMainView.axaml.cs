@@ -23,12 +23,13 @@ namespace VTACheckClock.Views
             this.Get<Button>("Dialog").Click += async delegate
             {
                 //var dialog = ShowEvtPrompt();
-                var dialog = new EventPromptWindow() {
-                    DataContext = new EventPromptViewModel(TimeSpan.MinValue)
+                var dialog = new EventPromptWindow
+                {
+                    DataContext = new EventPromptViewModel(TimeSpan.MinValue),
+                    ShowInTaskbar = false
                 };
-                dialog.ShowInTaskbar = false;
 
-                if ((Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow is { } mainWindow)
+                if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime { MainWindow: { } mainWindow })
                 {
                     var _result = await dialog.ShowDialog<string>(mainWindow);
                     Debug.WriteLine(_result);

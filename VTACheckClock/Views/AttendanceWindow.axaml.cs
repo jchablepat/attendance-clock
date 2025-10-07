@@ -38,7 +38,7 @@ namespace VTACheckClock.Views
             InitializeComponent();
             this.WhenActivated(d => d(ViewModel!.CancelCommand.Subscribe(model => { Close(); })));
 
-            Attendances = new ObservableCollection<AttendanceRecord>();
+            Attendances = [];
 
             this.MinWidth = 1000;
             this.MinHeight = 500;
@@ -194,7 +194,7 @@ namespace VTACheckClock.Views
             // Parsear la fecha para obtener el día de la semana
             var date = DateTime.ParseExact(dateKey, "yyyyMMdd", CultureInfo.InvariantCulture);
             var dayName = date.ToString("dddd", new CultureInfo("es-ES")); // Para nombres en español
-            dayName = char.ToUpper(dayName[0]) + dayName.Substring(1).ToLower();
+            dayName = char.ToUpper(dayName[0]) + dayName[1..].ToLower();
 
             var headerPanel = new StackPanel {
                 Children = {
@@ -389,7 +389,7 @@ namespace VTACheckClock.Views
             }
         }
 
-        private Dictionary<string, AttendanceTimeInfo> GenerateDailyStatus(DateTimeOffset start, DateTimeOffset end, DataRow dr)
+        private static Dictionary<string, AttendanceTimeInfo> GenerateDailyStatus(DateTimeOffset start, DateTimeOffset end, DataRow dr)
         {
             var status = new Dictionary<string, AttendanceTimeInfo>();
             var currentDate = start;
@@ -538,7 +538,7 @@ namespace VTACheckClock.Views
                 
                 return textBlock?.Text!;
             }
-            else if(headerContent is TextBox textBox) {
+            else if(headerContent is TextBox) {
                 return "";
             }
 

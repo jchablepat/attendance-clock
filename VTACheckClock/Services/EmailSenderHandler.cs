@@ -75,7 +75,7 @@ namespace VTACheckClock.Services
         /// <param name="emails">Mails concatenated in a text string with a special character.</param>
         private static void SetToAddress(ref MailMessage oMailMessage, string emails)
         {
-            char[] separators = { ',', ';' };
+            char[] separators = [',', ';'];
             foreach (var email in SplitEmailsByDelimiter(emails, separators))
             {
                 oMailMessage.To.Add(email.Trim());

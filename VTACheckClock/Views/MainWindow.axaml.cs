@@ -16,6 +16,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using VTACheckClock.Helpers;
 using VTACheckClock.Models;
+using VTACheckClock.Services.Audit;
 using VTACheckClock.Services.Libs;
 using VTACheckClock.ViewModels;
 using static VTACheckClock.Views.MessageBox;
@@ -78,7 +79,7 @@ namespace VTACheckClock.Views
             MinHeight = 597;
         }
 
-        private void SetParentWindow()
+        private static void SetParentWindow()
         {
             // Obtiene el servicio "IMouseDevice" de Avalonia.
             //var mouse = AvaloniaLocator.Current.GetService<IMouseDevice>();
@@ -256,7 +257,7 @@ namespace VTACheckClock.Views
             }
         }
 
-        public void addNotice(Notice? notice)
+        public void AddNotice(Notice? notice)
         {
             ((MainWindowViewModel?)DataContext).NewNotice = notice;
         }

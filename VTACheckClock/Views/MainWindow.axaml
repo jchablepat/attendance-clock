@@ -184,9 +184,13 @@
 					<Label IsVisible="{ Binding IsNetConnected }" Content="{ Binding NetworkConStatus }" Padding="6 6 6 0" FontSize="14" FontWeight="Black" Background="#90ee90" />
 					<Label Content="{ Binding Office }" FontSize="14" Padding="2 6 0 0" />
 				</StackPanel>
-				<TextBlock Grid.Column="1" IsVisible="{Binding !IsWebSocketConnected}" Text="{Binding ConnectionStatus}" Foreground="Red" VerticalAlignment="Center" TextAlignment="Center" FontSize="14" />
-				<TextBlock Grid.Column="1" IsVisible="{Binding IsWebSocketConnected}" Text="{Binding ConnectionStatus}" Foreground="Blue" VerticalAlignment="Center" TextAlignment="Center" FontSize="14" />
-				<StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
+        
+        <!-- WS status: Disabled, Disconnected, Connected -->
+        <TextBlock Grid.Column="1" IsVisible="{Binding IsWebSocketDisabled }" Text="{Binding ConnectionStatus}" Foreground="#8B8B8B" VerticalAlignment="Center" TextAlignment="Center" FontSize="14" />
+        <TextBlock Grid.Column="1" IsVisible="{Binding IsWebSocketDisconnected }" Text="{Binding ConnectionStatus}" Foreground="Red" VerticalAlignment="Center" TextAlignment="Center" FontSize="14" />
+        <TextBlock Grid.Column="1" IsVisible="{Binding IsWebSocketConnected}" Text="{Binding ConnectionStatus}" Foreground="Blue" VerticalAlignment="Center" TextAlignment="Center" FontSize="14" />
+				
+        <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
 					<Label Content="{ Binding CurrentLongDate }" FontSize="14" Padding="0 8 0 0" />
 					<Label FontSize="14" Padding="10 8 0 0" FontStyle="Italic">Powered by: </Label>
 					<Image Margin="4, 0" Source="/Assets/vt_software_logo.png" Height="20"></Image>

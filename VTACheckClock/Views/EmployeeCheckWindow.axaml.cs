@@ -1,9 +1,6 @@
-using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
 using MsBox.Avalonia;
 using VTACheckClock.Helpers;
-using VTACheckClock.Views;
 
 namespace VTACheckClock;
 

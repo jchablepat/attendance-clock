@@ -1,4 +1,4 @@
-﻿namespace VTACheckClock.Models
+namespace VTACheckClock.Models
 {
     public class MainSettings
     {
@@ -33,5 +33,9 @@
         public string? SignalRHubName { get; set; }
         public string? SignalRMethodName { get; set; }
         public string? SignalRApiKey { get; set; }
+
+        // Seq logging configuration
+        public string? SeqUrl { get; set; }
+        public string? SeqApiKey { get; set; }
     }
 }

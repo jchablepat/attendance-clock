@@ -1,9 +1,7 @@
 ﻿using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
-using System.IO;
 using System.Threading.Tasks;
-using VTACheckClock.Services.Libs;
 
 namespace VTACheckClock.Services
 {
@@ -16,9 +14,9 @@ namespace VTACheckClock.Services
     {
         public static FilePickerFileType ImageAll { get; } = new("All Images")
         {
-            Patterns = new[] { "*.png", "*.jpg", "*.jpeg", "*.gif", "*.bmp", "*.webp" },
-            AppleUniformTypeIdentifiers = new[] { "public.image" },
-            MimeTypes = new[] { "image/*" }
+            Patterns = ["*.png", "*.jpg", "*.jpeg", "*.gif", "*.bmp", "*.webp"],
+            AppleUniformTypeIdentifiers = ["public.image"],
+            MimeTypes = ["image/*"]
         };
 
         public async Task<IStorageFile?> OpenFilePickerAsync()
@@ -37,13 +35,13 @@ namespace VTACheckClock.Services
             var files = await provider.OpenFilePickerAsync(new FilePickerOpenOptions() {
                 Title = "Seleccionar archivo de conexión",
                 AllowMultiple = false,
-                FileTypeFilter = new FilePickerFileType[] {
+                FileTypeFilter = [
                     new("Archivos Hash") { 
-                        Patterns = new string[] {"*.hash" } 
+                        Patterns = ["*.hash"] 
                     }
                     //FilePickerFileTypes.ImageAll, 
                     //FilePickerFileTypes.Pdf
-                }
+                ]
             });
 
             return files?.Count >= 1 ? files[0] : null;
