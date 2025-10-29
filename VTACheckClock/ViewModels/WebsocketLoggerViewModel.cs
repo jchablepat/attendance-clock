@@ -23,7 +23,7 @@ namespace VTACheckClock.ViewModels
     class WebsocketLoggerViewModel : ViewModelBase
     {
         private readonly IRealtimeService _realtime;
-        //private readonly Logger log = LogManager.GetLogger("app_logger");
+        private readonly Logger log = LogManager.GetLogger("app_logger");
         private FileSystemWatcher? _watcher;
         readonly string logFilePath = Path.Combine(GlobalVars.AppWorkPath, "logs");
         private string _logText = "Waiting for log changes...";
@@ -343,7 +343,14 @@ namespace VTACheckClock.ViewModels
             DataRow? employee = emp_dt?.AsEnumerable().FirstOrDefault(row => row.Field<string>("EmpID") == cachePart[0]);
             string? empName = employee?.Field<string>("EmpName") ?? cachePart[0];
 
-            DateTime v = CommonProcs.FromFileString(cachePart[2].ToString());
+            DateTime v = DateTime.MinValue;
+            if (cachePart[2].ToString().Contains('/')) {
+                _ = DateTime.TryParse(cachePart[2].ToString(), out v);
+            }
+            else {
+                v = CommonProcs.FromFileString(cachePart[2].ToString());
+            }
+
             string? newMessage = $"El empleado {empName} ha registrado {CommonObjs.EvTypes[int.Parse(cachePart[1].ToString() ?? "0")]} a las {v:HH:mm:ss} horas el día {v:d/MM/yyyy}.";
 
             return newMessage;

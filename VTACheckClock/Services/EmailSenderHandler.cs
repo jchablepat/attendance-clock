@@ -13,27 +13,49 @@ namespace VTACheckClock.Services
     {
         private static readonly Logger log = LogManager.GetLogger("app_logger");
 
-        private static bool SetMailConfig(ref SmtpClient oSmtpClient, ref string recipients)
+        private static bool SetMailConfig(SmtpClient oSmtpClient, ref string recipients)
         {
             bool setConfig = false;
             var config = RegAccess.GetMainSettings() ?? new MainSettings();
 
             var host = config.MailServer; // tuServidorSmtp
-            int port = !string.IsNullOrEmpty(config?.MailPort) ? int.Parse(config.MailPort) : 0;
+            bool validPort = int.TryParse(config?.MailPort, out int port);
             var username = config.MailUser;
             var password = config.MailPass;
             bool IsEnabled = config.MailEnabled;
             recipients = config.MailRecipient ?? "";
-            
-            if (!string.IsNullOrWhiteSpace(host) && port != 0 && !string.IsNullOrWhiteSpace(username) && !string.IsNullOrEmpty(recipients) && !string.IsNullOrWhiteSpace(password) && IsEnabled)
+
+            bool hasHost = !string.IsNullOrWhiteSpace(host);
+            bool hasPort = validPort && port != 0;
+            bool hasUser = !string.IsNullOrWhiteSpace(username);
+            bool hasPass = !string.IsNullOrWhiteSpace(password);
+            bool hasRecipients = !string.IsNullOrEmpty(recipients);
+
+            if (hasHost && hasPort && hasUser && hasPass && hasRecipients && IsEnabled)
             {
-                oSmtpClient.Host = host;
+                oSmtpClient.Host = host!;
                 oSmtpClient.Port = port;
                 oSmtpClient.Credentials = new NetworkCredential(username, password);
+                oSmtpClient.UseDefaultCredentials = false;
                 oSmtpClient.EnableSsl = true;
                 oSmtpClient.DeliveryMethod = SmtpDeliveryMethod.Network;
 
                 setConfig = true;
+            }
+
+            if (!setConfig && IsEnabled)
+            {
+                // Log detallado de configuración faltante o inválida
+                var detalles = $"Host='{host}', Port='{config?.MailPort}', User='{username}', Recipients='{recipients}', Habilitado={IsEnabled}";
+                var faltantes = new StringBuilder();
+                if (!IsEnabled) faltantes.Append("MailEnabled=false; ");
+                if (!hasHost) faltantes.Append("Host vacío; ");
+                if (!hasPort) faltantes.Append("Puerto inválido; ");
+                if (!hasUser) faltantes.Append("Usuario vacío; ");
+                if (!hasPass) faltantes.Append("Contraseña vacía; ");
+                if (!hasRecipients) faltantes.Append("Destinatarios vacíos; ");
+
+                log.Warn($"Configuración SMTP incompleta/incorrecta. {detalles}. Falta: {faltantes.ToString().Trim()}");
             }
 
             return setConfig;
@@ -42,12 +64,14 @@ namespace VTACheckClock.Services
         public static async Task SendEmailAsync(string subject, string body)
         {
             try {
-                SmtpClient oSmtpClient = new();
+                using SmtpClient oSmtpClient = new();
                 string recipients = "";
 
-                if (!SetMailConfig(ref oSmtpClient, ref recipients)) {
+                if (!SetMailConfig(oSmtpClient, ref recipients)) {
                     return;
                 }
+
+                oSmtpClient.Timeout = 30000; // 30s
 
                 NetworkCredential? credentials = oSmtpClient?.Credentials as NetworkCredential;
 
@@ -58,13 +82,32 @@ namespace VTACheckClock.Services
                 SetToAddress(ref oMailMessage, recipients);
 
                 oMailMessage.Subject = subject;
+                oMailMessage.SubjectEncoding = Encoding.UTF8;
                 oMailMessage.Body = body;
+                oMailMessage.BodyEncoding = Encoding.UTF8;
                 oMailMessage.IsBodyHtml = true;
 
                 await oSmtpClient.SendMailAsync(oMailMessage);
+                //log.Info($"Correo enviado correctamente a: {recipients}");
             }
-            catch (Exception ex) {
-                log.Warn($"Error al enviar el correo: {ex.Message} => { ex.InnerException?.Message ?? "" }");
+            catch (SmtpFailedRecipientsException ex)
+            {
+                foreach (var inner in ex.InnerExceptions)
+                {
+                    log.Warn(inner, $"Fallo SMTP para destinatario '{inner.FailedRecipient}' (Status: {inner.StatusCode})");
+                }
+                log.Warn(ex, "Error SMTP: múltiples destinatarios fallidos");
+            }
+            catch (SmtpFailedRecipientException ex)
+            {
+                log.Warn(ex, $"Fallo SMTP para destinatario '{ex.FailedRecipient}' (Status: {ex.StatusCode})");
+            }
+            catch (SmtpException smtpEx) {
+                log.Warn(smtpEx, $"Error SMTP al enviar el correo (Status: {smtpEx.StatusCode}). Detalles: {smtpEx.ToString()}");
+            }
+            catch (Exception ex)
+            {
+                log.Warn(ex, $"Error general al enviar el correo.");
             }
         }
 
@@ -76,10 +119,21 @@ namespace VTACheckClock.Services
         private static void SetToAddress(ref MailMessage oMailMessage, string emails)
         {
             char[] separators = [',', ';'];
+            //int added = 0;
             foreach (var email in SplitEmailsByDelimiter(emails, separators))
             {
-                oMailMessage.To.Add(email.Trim());
+                var em = email.Trim();
+                try
+                {
+                    oMailMessage.To.Add(em);
+                    //added++;
+                }
+                catch (Exception ex)
+                {
+                    log.Warn(ex, $"Dirección de correo inválida ignorada: '{em}'");
+                }
             }
+            //log.Debug($"Destinatarios agregados: {added}");
         }
 
         /// <summary>

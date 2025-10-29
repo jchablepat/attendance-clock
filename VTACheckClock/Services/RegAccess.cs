@@ -55,6 +55,7 @@ namespace VTACheckClock.Services
                             SignalRHubUrl = GetRegValue("signalRHubUrl"),
                             SignalRHubName = GetRegValue("signalRHubName"),
                             SignalRMethodName = GetRegValue("signalRMethodName"),
+                            SignalRAdminMethodName = GetRegValue("signalRAdminMethodName"),
                             SignalRApiKey = GetRegValue("signalRApiKey"),
                             SeqUrl = GetRegValue("seqUrl"),
                             SeqApiKey = GetRegValue("seqApiKey")
@@ -201,6 +202,7 @@ namespace VTACheckClock.Services
                             SignalRHubUrl = GetRegValue("signalRHubUrl"),
                             SignalRHubName = GetRegValue("signalRHubName"),
                             SignalRMethodName = GetRegValue("signalRMethodName"),
+                            SignalRAdminMethodName = GetRegValue("signalRAdminMethodName"),
                             SignalRApiKey = GetRegValue("signalRApiKey"),
                             SeqUrl = GetRegValue("seqUrl"),
                             SeqApiKey = GetRegValue("seqApiKey")
@@ -374,6 +376,7 @@ namespace VTACheckClock.Services
                         la_key.SetValue("signalRHubUrl", aes_crypt.EncryptToBytes(msettings.SignalRHubUrl));
                         la_key.SetValue("signalRHubName", aes_crypt.EncryptToBytes(msettings.SignalRHubName));
                         la_key.SetValue("signalRMethodName", aes_crypt.EncryptToBytes(msettings.SignalRMethodName));
+                        la_key.SetValue("signalRAdminMethodName", aes_crypt.EncryptToBytes(msettings.SignalRAdminMethodName));
                         la_key.SetValue("db_server", aes_crypt.EncryptToBytes(msettings.Db_server));
                         la_key.SetValue("db_name", aes_crypt.EncryptToBytes(msettings.Db_name));
                         la_key.SetValue("db_user", aes_crypt.EncryptToBytes(msettings.Db_user));

@@ -59,12 +59,13 @@ namespace VTACheckClock.Services
                 GlobalDiagnosticsContext.Set("OfficeName", officeInfo?.Offname ?? string.Empty);
             }
 
+            // ============================================
+            // TARGET 2: Seq (Logs centralizados en la nube)
+            // ============================================
+
             // Configurar Seq si hay valores definidos en configuraciones
             if (!string.IsNullOrWhiteSpace(seqUrl))
             {
-                // ============================================
-                // TARGET 2: Seq (Logs centralizados en la nube)
-                // ============================================
                 var seqTarget = new SeqTarget()
                 {
                     Name = "seq",
@@ -102,15 +103,22 @@ namespace VTACheckClock.Services
                 Layout = "${time}|${level:uppercase=true}|${message}"
             };
 
+            // ============================================
+            // TARGET 4: Admin Alerts (errores críticos)
+            // ============================================
+            var adminAlertTarget = new AdminAlertNLogTarget() { Name = "admin_alerts" };
+
             // Agregar targets a la configuración
             config.AddTarget(fileTarget);
             config.AddTarget(consoleTarget);
+            config.AddTarget(adminAlertTarget);
 
             // ============================================
             // REGLAS: Definir qué logs van a qué targets
             // ============================================
             config.AddRule(LogLevel.Trace, LogLevel.Fatal, fileTarget);
             config.AddRule(new LoggingRule("app_logger", LogLevel.Info, fileTarget));
+            config.AddRule(LogLevel.Fatal, LogLevel.Fatal, adminAlertTarget);
 
             // Solo en Debug mode, mostrar en consola
             #if DEBUG

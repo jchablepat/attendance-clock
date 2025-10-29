@@ -58,6 +58,8 @@ namespace VTACheckClock
             services.AddSingleton<UIService>();
             services.AddSingleton<ClockService>();
             services.AddSingleton<ILoggingService, LoggingService>();
+            services.AddSingleton<IAdminAlertService, AdminAlertService>();
+            services.AddSingleton<AdminAlertBackgroundQueue>();
 
             ServiceProvider = services.BuildServiceProvider();
 

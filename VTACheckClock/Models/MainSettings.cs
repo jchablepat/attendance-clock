@@ -33,6 +33,7 @@ namespace VTACheckClock.Models
         public string? SignalRHubName { get; set; }
         public string? SignalRMethodName { get; set; }
         public string? SignalRApiKey { get; set; }
+        public string? SignalRAdminMethodName { get; set; }
 
         // Seq logging configuration
         public string? SeqUrl { get; set; }

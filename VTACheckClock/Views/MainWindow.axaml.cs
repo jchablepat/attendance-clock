@@ -37,10 +37,11 @@ namespace VTACheckClock.Views
             //this.WhenActivated(d => d(ViewModel!.ShowPwdPunchDialog.RegisterHandler(ShowPwdPunchDialogAsync)));
             this.WhenActivated(d => d(ViewModel!.ShowLoggerDialog.RegisterHandler(ShowLoggerDialogAsync)));
             this.WhenActivated(d => d(ViewModel!.ShowAttendanceRptDialog.RegisterHandler(ShowAttendanceRptDialogAsync)));
+            this.WhenActivated(d => d(ViewModel!.ShowPunchesPreviewDialog.RegisterHandler(ShowPunchesPreviewDialogAsync)));
 
             Activated += OnActivated;
 
-            // Registra el manejador de eventos aquí o agrega el evento 'KeyDown' en la ventana del archivo .axaml.
+            // Registra el manejador de eventos aquÃ­ o agrega el evento 'KeyDown' en la ventana del archivo .axaml.
             KeyDown += OnKeyDown;
 
             Closed += (sender, args) => {
@@ -84,17 +85,17 @@ namespace VTACheckClock.Views
             // Obtiene el servicio "IMouseDevice" de Avalonia.
             //var mouse = AvaloniaLocator.Current.GetService<IMouseDevice>();
 
-            // Obtiene la posición actual del mouse.
+            // Obtiene la posiciï¿½n actual del mouse.
             //Point mousePosition = mouse.GetPosition(null);
 
             // Obtiene las coordenadas X e Y del mouse.
             //int mouseX = (int)mousePosition.X;
             //int mouseY = (int)mousePosition.Y;
 
-            // Obtiene la pantalla en la que se encuentra la posición del mouse.
+            // Obtiene la pantalla en la que se encuentra la posiciï¿½n del mouse.
             //Screen screen = Screens.ScreenFromPoint(new PixelPoint(mouseX, mouseY));
 
-            // Establece la posición de la ventana en la pantalla en la que se encuentra el mouse.
+            // Establece la posiciï¿½n de la ventana en la pantalla en la que se encuentra el mouse.
             //WindowStartupLocation = WindowStartupLocation.Manual;
             //Position = new PixelPoint(screen.Bounds.X, screen.Bounds.Y);
         }
@@ -149,6 +150,16 @@ namespace VTACheckClock.Views
             interaction.SetOutput(result);
         }
 
+        private async Task ShowPunchesPreviewDialogAsync(IInteractionContext<PunchSyncPreviewViewModel, bool> interaction)
+        {
+            var dialog = new PunchSyncPreviewWindow() {
+                DataContext = interaction.Input
+            };
+
+            var result = await dialog.ShowDialog<bool>(this);
+            interaction.SetOutput(result);
+        }
+
         private async void OnWindowClosing(object sender, WindowClosingEventArgs e)
         {
             e.Cancel = true;
@@ -166,12 +177,12 @@ namespace VTACheckClock.Views
         }
 
         /// <summary>
-        /// Intercepta el evento de presionar y soltar una tecla y decide la acción a realizar.
+        /// Intercepta el evento de presionar y soltar una tecla y decide la acciï¿½n a realizar.
         /// <para>
         /// - F11: Alterna el modo de pantalla completa.
         /// </para>
         /// <para>
-        /// - Shift + F12: Invoca el cuadro de diálogo para efectuar el registro de asistencia con clave.
+        /// - Shift + F12: Invoca el cuadro de diï¿½logo para efectuar el registro de asistencia con clave.
         /// </para>
         /// </summary>
         /// <param name="sender"></param>
@@ -211,7 +222,9 @@ namespace VTACheckClock.Views
                 e.Handled = true;
             }
 
+            #if DEBUG
             Debug.WriteLine($"An KeyDown event has been handled, this is the Key: {e.Key}");
+            #endif
         }
 
         public async Task TestAssistance()
@@ -241,7 +254,7 @@ namespace VTACheckClock.Views
                 if (!forceexit) {
                     if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime { MainWindow: { } mainWindow })
                     {
-                        var _result = await ShowPrompt("¿Salir?", "¿Confirma que desea salir de la aplicación?");
+                        var _result = await ShowPrompt("Â¿Salir?", "Â¿Confirma que desea salir de la aplicaciÃ³n?");
                         if (_result == ButtonResult.Yes) {
                             ((MainWindowViewModel?)DataContext).ShowLoader = true;
                             //(Application.Current.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.Shutdown();
@@ -279,7 +292,7 @@ namespace VTACheckClock.Views
         }
 
         /// <summary>
-        /// Alterna la ejecución del formulario en modo de pantalla completa.
+        /// Alterna la ejecuciÃ³n del formulario en modo de pantalla completa.
         /// </summary>
         private void ToggleFullScreen()
         {

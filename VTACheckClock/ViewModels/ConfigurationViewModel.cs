@@ -129,12 +129,12 @@ namespace VTACheckClock.ViewModels
                     GlobalVars.IsRestart = false;
 
                     UrUClass.LoadCurrentReader();
-                    //if (!UrUClass.OpenReader())
-                    //{
-                    //    Title = "No se pudo inicializar el Lector de Huellas.";
-                    //    Message = "No se ha encontrado ningún lector de huella dactilar o no se ha podido tener acceso al mismo.\n\nPruebe una de las siguientes opciones:\n\n1. Rectifique que el lector se encuentra debidamente conectado al equipo; deberá ver una luz azul en el lector que así lo indica.\n2. Asegúrese que los controladores necesarios han sido correctamente instalados.\n3. Conecte y desconecte el lector o conéctelo a un puerto USB diferente.\n4. Reinicie el equipo.\n\nSi el problema persiste, póngase en contacto con el administrador del sistema.";
-                    //    return;
-                    //}
+                    if (!UrUClass.OpenReader())
+                    {
+                        Title = "No se pudo inicializar el Lector de Huellas.";
+                        Message = "No se ha encontrado ningún lector de huella dactilar o no se ha podido tener acceso al mismo.\n\nPruebe una de las siguientes opciones:\n\n1. Rectifique que el lector se encuentra debidamente conectado al equipo; deberá ver una luz azul en el lector que así lo indica.\n2. Asegúrese que los controladores necesarios han sido correctamente instalados.\n3. Conecte y desconecte el lector o conéctelo a un puerto USB diferente.\n4. Reinicie el equipo.\n\nSi el problema persiste, póngase en contacto con el administrador del sistema.";
+                        return;
+                    }
 
                     if (CommonProcs.RetrieveParams()) {
                         try {

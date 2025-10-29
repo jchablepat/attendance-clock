@@ -255,29 +255,37 @@
 										<TextBox Name="txtSignalRHubUrl" Text="{ Binding SignalRHubUrl }" Width="400" Watermark="https://your-signalr-hub.com"/>
 									</StackPanel>
 									
-									<StackPanel Background="White" Orientation="Horizontal">
-										<TextBlock Text="Hub Name:" Padding="10 6 0 0" Width="90" />
-										<TextBox Name="txtSignalRHubName" Text="{ Binding SignalRHubName }" Width="180" Watermark="myHub"/>
-										
-										<TextBlock Text="Method:" Padding="15 6 0 0" Width="90"/>
-										<TextBox ToolTip.Tip="Método para enviar registros de Checadas y Salidas" 
+                                <StackPanel Background="White" Orientation="Horizontal">
+                                    <TextBlock Text="Hub Name:" Padding="10 6 0 0" Width="90" />
+                                    <TextBox Name="txtSignalRHubName" Text="{ Binding SignalRHubName }" Width="180" Watermark="myHub"/>
+                                        
+                                    <TextBlock Text="Method:" Padding="15 6 0 0" Width="90"/>
+                                    <TextBox ToolTip.Tip="Método para enviar registros de Checadas y Salidas" 
                        Name="txtSignalRMethodName" 
                        Text="{ Binding SignalRMethodName }" 
                        Width="130" Watermark="SendMessage"
                     />
-									</StackPanel>
+                                </StackPanel>
+
+                                <StackPanel Background="White" Orientation="Horizontal" Margin="0 6 0 0">
+                                    <TextBlock Text="Admin Method:" Padding="10 6 0 0" Width="90" />
+                                    <TextBox ToolTip.Tip="Método de SignalR para enviar alertas administrativas" 
+                                             Name="txtSignalRAdminMethodName" 
+                                             Text="{ Binding SignalRAdminMethodName }" 
+                                             Width="180" Watermark="NotifyAdmin" />
+                                </StackPanel>
 
                   <StackPanel Background="White" Orientation="Horizontal" Margin="0 10 0 0">
                     <TextBlock Text="API Key:" Padding="15 6 0 0" Width="90"/>
                     <TextBox IsReadOnly="True" ToolTip.Tip="Clave de API para autenticar la conexión SignalR"
-												 Name="txtSignalRApiKey"
-												 Text="{ Binding SignalRApiKey }"
-												 Width="290" Watermark="your-api-key"
-										/>
+                                                 Name="txtSignalRApiKey"
+                                                 Text="{ Binding SignalRApiKey }"
+                                                 Width="290" Watermark="your-api-key"
+                                        />
                     <Button Content="Generate API Key" ToolTip.Tip="Registrar el dispositivo y generar una clave segura"
-												Command="{Binding RegisterDeviceCommand}"
+                                                Command="{Binding RegisterDeviceCommand}"
                         Background="#2196F3" Foreground="White"
-												Margin="10 0 0 0" Width="120"
+                                                Margin="10 0 0 0" Width="120"
                     />
                   </StackPanel>
 								</StackPanel>

@@ -1,16 +1,16 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:VTACheckClock.ViewModels"
-				xmlns:views="using:VTACheckClock.Views"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        xmlns:vm="clr-namespace:VTACheckClock.ViewModels"
+		xmlns:views="clr-namespace:VTACheckClock.Views"
+		mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="450"
         x:Class="VTACheckClock.Views.MainWindow"
         Icon="/Assets/Main.ico"
-				TransparencyLevelHint="AcrylicBlur"
-				Closing="OnWindowClosing"
-				Name="wdw_Main"
-				Title="Reloj Checador"
+		TransparencyLevelHint="AcrylicBlur"
+		Closing="OnWindowClosing"
+		Name="wdw_Main"
+		Title="Reloj Checador"
 >
 	<!--Content="{Binding Content}"-->
 	<Window.Styles>
@@ -44,9 +44,7 @@
     <Design.DataContext>
         <vm:MainWindowViewModel/>
     </Design.DataContext>
-<!--Start default template code-->
-    <!--<TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>-->
-<!--End default template code-->
+
 	<!--<views:CheckClockMainView />-->
   <Panel>
     <!-- Contenido normal de la ventana -->
@@ -121,20 +119,24 @@
                         <PathIcon Data="{StaticResource shifts_activity_regular}" Foreground="Purple" Width="30" Height="30" />
                       </Button>
 										</StackPanel>
-										<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0 0 2 0">
+										
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0 0 2 0">
 											<Button Name="btnSync" Margin="2 0" Width="50" Height="50" Command="{ Binding SyncEvtCommand }" ToolTip.Tip="Sincronización...">
 												<!--<Image Source="/Assets/btnSync.png" Height="40"/>-->
-                        <PathIcon Data="{StaticResource arrow_sync_regular}" Foreground="BlueViolet" Width="30" Height="30" />
+												<PathIcon Data="{StaticResource arrow_sync_regular}" Foreground="BlueViolet" Width="30" Height="30" />
 											</Button>
+											<!--<Button Name="btnPreviewSync" Margin="2 0" Width="50" Height="50" Command="{ Binding PreviewPunchSyncCommand }" ToolTip.Tip="Vista previa de checadas a sincronizar (Admin)">
+												<PathIcon Data="{StaticResource document_search_regular}" Foreground="Purple" Width="30" Height="30" />
+											</Button>-->
 											<Button Width="50" Height="50" Command="{ Binding $parent[Window].DataContext.LoginCommand }" ToolTip.Tip="Opciones de configuración...">
-                        <PathIcon Data="{StaticResource content_settings_regular}" Foreground="Purple" Width="30" Height="30" />
+												<PathIcon Data="{StaticResource content_settings_regular}" Foreground="Purple" Width="30" Height="30" />
 											</Button>
 											<!--Just for testing purpose-->
 											<Button IsVisible="False" Width="50" Margin="2 0" Height="50" ToolTip.Tip="Send employees with no check-in or check-out by email." Command="{ Binding SendEmailCommand }">
 												<PathIcon Data="{StaticResource send_regular}" Foreground="Purple" />
 											</Button>
 											<Button IsVisible="False" Width="50" Margin="2 0" Height="50" ToolTip.Tip="Asistencia de empleados" Command="{ Binding PreviewAttendanceReportCommand }">
-												 <PathIcon Data="{StaticResource document_search_regular}" Foreground="Purple" />
+												<PathIcon Data="{StaticResource document_search_regular}" Foreground="Purple" />
 											</Button>
 										</StackPanel>
 									</Panel>
@@ -171,7 +173,7 @@
 				</DockPanel>
 			</Grid>
 
-			<Grid Grid.Row="1" ColumnDefinitions="*, *, *" Margin="0, Auto" Height="30" Background="#f0f0f0">
+			<Grid Grid.Row="1" ColumnDefinitions="*, *, *" Margin="0,0" Height="30" Background="#f0f0f0">
 				<StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
 					<Grid Background="Red" IsVisible="{ Binding !IsNetConnected }">
 						<!--<Image Source="{SvgImage /Assets/cloud_offline.svg}" Height="25" />-->

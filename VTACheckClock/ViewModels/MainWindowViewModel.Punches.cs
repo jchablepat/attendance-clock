@@ -12,6 +12,7 @@ using VTACheckClock.Services;
 using VTACheckClock.Services.Libs;
 using VTACheckClock.Views;
 using static VTACheckClock.Views.MessageBox;
+using Microsoft.Extensions.DependencyInjection;
 namespace VTACheckClock.ViewModels
 {
     partial class MainWindowViewModel
@@ -177,7 +178,15 @@ namespace VTACheckClock.ViewModels
 
                 //ToggleTimers(true); //Reanuda el temporizador esperando otro registro de asistencia.
             } catch (Exception exc) {
-                
+                var clock = RegAccess.GetClockSettings() ?? new ClockSettings();
+
+                SendBackgroundAlert("Error al procesar la huella (PunchRegister)", exc, new {
+                    FoundIndex,
+                    SearchText,
+                    CurrentTime = GetCurrentClockTime(),
+                    DeviceId = clock.clock_uuid
+                });
+
                 //ToggleTimers(true);
                 await ShowMessage("Error al procesar la huella", exc.Message);
             } finally {
@@ -214,7 +223,7 @@ namespace VTACheckClock.ViewModels
                 DataView dv2 = new(dt1, "", "PuncTime ASC", DataViewRowState.CurrentRows);
 
                 return dv2.ToTable();
-            } catch(Exception ex) { log.Warn("Error fetching punches by employee: " + ex.Message); }
+            } catch(Exception ex) { log.Error("Error fetching punches by employee: " + ex.Message); }
 
             return dt;
         }
@@ -282,6 +291,12 @@ namespace VTACheckClock.ViewModels
             if(last_punch == null)
             {
                 log.Warn("No se encontró el último evento registrado. Los datos son nulos y se asignará Entrada como el siguiente evento.");
+                
+                SendBackgroundAlert("Último evento no encontrado (ComputeNextEvent)", new Exception("last_punch es nulo"), new {
+                    new_punch,
+                    Params = new { DupSeconds = CommonProcs.ParamInt(3), MaxShift = CommonProcs.ParamTSpan(12) }
+                });
+
                 return 1; //Si no hay registro previo, entonces es entrada
             }
 
@@ -344,10 +359,27 @@ namespace VTACheckClock.ViewModels
                         }
                     default:
                         log.Warn("El último evento registrado no es válido. Se asignará Entrada como el siguiente evento al Empleado con ID: " + last_punch?.Punchemp);
+                        
+                        SendBackgroundAlert("Último evento no válido (ComputeNextEvent)", new Exception("Evento inválido: " + last_punch?.Punchevent), new {
+                            last_punch,
+                            new_punch,
+                            Params = new { DupSeconds = CommonProcs.ParamInt(3), MaxShift = CommonProcs.ParamTSpan(12) }
+                        });
+
                         return 1;
                 }
             } catch(Exception ex) {
-                log.Error($"El último evento registrado no es válido: {ex.Message}. Se asignará Entrada como el siguiente evento");
+                log.Error($"Error al calcular siguiente evento: {ex.Message}. Se asignará Entrada como el siguiente evento");
+
+                var clock = RegAccess.GetClockSettings() ?? new ClockSettings();
+
+                SendBackgroundAlert("Error al calcular siguiente evento (ComputeNextEvent)", ex, new {
+                    last_punch,
+                    new_punch,
+                    Params = new { DupSeconds = CommonProcs.ParamInt(3), MaxShift = CommonProcs.ParamTSpan(12) },
+                    DeviceId = clock.clock_uuid
+                });
+
                 return 1;
             }
         }
@@ -377,6 +409,48 @@ namespace VTACheckClock.ViewModels
             }
         }
 
+        /// <summary>
+        /// Sends an administrative error alert in the background, either by enqueuing it in a background queue or by
+        /// directly notifying the alert service if the queue is unavailable.
+        /// </summary>
+        /// <remarks>This method attempts to use a background queue to avoid blocking the main execution
+        /// flow. If the queue is unavailable, it falls back to a fire-and-forget approach by directly invoking the
+        /// alert service asynchronously.</remarks>
+        /// <param name="title">The title of the alert, providing a brief description of the error.</param>
+        /// <param name="ex">The exception that triggered the alert. This is used to populate the alert details.</param>
+        /// <param name="context">An object representing additional context for the alert, which will be serialized into the alert message.</param>
+        private static void SendBackgroundAlert(string title, Exception ex, object context) {
+            try
+            {
+                var clock = RegAccess.GetClockSettings() ?? new ClockSettings();
+                var alert = new AdminErrorAlert
+                {
+                    Title = title,
+                    Severity = "Error",
+                    Message = ex.Message,
+                    Exception = ex.ToString(),
+                    Context = JsonConvert.SerializeObject(context),
+                    OfficeId = clock.clock_office.ToString(),
+                    DeviceUUID = clock.clock_uuid ?? string.Empty,
+                    Timestamp = DateTime.Now
+                };
+
+                // Preferir cola en segundo plano para no bloquear flujo principal
+                var queue = App.ServiceProvider.GetService<AdminAlertBackgroundQueue>();
+                if (queue != null)
+                {
+                    queue.Enqueue(alert);
+                }
+                else
+                {
+                    // Fallback fire-and-forget directo si no hay cola disponible
+                    var alertSvc = App.ServiceProvider.GetService<IAdminAlertService>();
+                    _ = Task.Run(async () => await (alertSvc?.NotifyErrorAsync(alert.Title!, ex, alert) ?? Task.CompletedTask));
+                }
+            }
+            catch { }
+        }
+
         private async Task SavePunchToDB(PunchLine new_punch)
         {
             ScantRequest scantreq = new() {
@@ -396,8 +470,12 @@ namespace VTACheckClock.ViewModels
         }
 
         /// <summary>
-        /// Llena el panel del histórico de registros de asistencia con las que fueron encontradas para el día actual.
+        /// Updates the history panel with the latest attendance records for the current day. All employee punch data is filtered,
         /// </summary>
+        /// <remarks>This method filters and processes employee punch data to display attendance records
+        /// for the current day. It groups and orders the data, updates the internal collections, and refreshes the UI
+        /// elements associated with the history panel.</remarks>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         private async Task UpdateHistoryPanel()
         {
             int emp_idx = -1;
@@ -406,14 +484,20 @@ namespace VTACheckClock.ViewModels
             DateTime today = GetCurrentClockTime();
 
             var filteredRows = emp_punches?.AsEnumerable()
-            .Where(p => Convert.ToDateTime(p["PuncTime"].ToString()) >= new DateTime(today.Year, today.Month, today.Day, 0, 0, 0))
-            .GroupBy(row => new { 
-                EmpID = row.Field<int>("EmpID"), 
-                EvID = row.Field<int>("EvID"),
-                PuncTime = row.Field<string>("PuncTime")
+            .Where(p => {
+                _ = DateTime.TryParse(p["PuncTime"]?.ToString(), out DateTime pTime);
+                return pTime >= new DateTime(today.Year, today.Month, today.Day, 0, 0, 0);
+            })
+            .GroupBy(row => new {
+                EmpID = row["EmpID"]?.ToString() ?? "0",
+                EvID = row["EvID"]?.ToString() ?? "0",
+                PuncTime = row["PuncTime"]?.ToString() ?? string.Empty
             })
             .Select(group => group.First())
-            .OrderBy(x => x.Field<int>("EmpID"))
+            .OrderBy(x => {
+                _ = int.TryParse(x["EmpID"]?.ToString(), out int empId);
+                return empId;
+            })
             //.Take(40)
             .ToList();
 
@@ -428,18 +512,21 @@ namespace VTACheckClock.ViewModels
                     Employee.ResetAndReloadData();
 
                     foreach (DataRow dr in dt.Rows) {
-                        emp_idx = fmd_collection.FindIndex(e => e.empid == dr.Field<int>("EmpID"));
+                        _ = int.TryParse(dr["EmpID"]?.ToString(), out int empId);
+                        emp_idx = fmd_collection.FindIndex(e => e.empid == empId);
                         emp_name = (emp_idx > -1) ? fmd_collection.ElementAt(emp_idx)?.empnom : string.Empty;
 
                         if (!string.IsNullOrWhiteSpace(emp_name)) {
+                            //DateTime PuncTime = CommonProcs.FromFileString(dr["PuncTime"]?.ToString() ?? string.Empty);
                             _ = DateTime.TryParse(dr["PuncTime"].ToString(), out DateTime PuncTime);
+                            _ = int.TryParse(dr["EvID"]?.ToString(), out int evId);
 
                             //OLD: _sourceList.Add(...)
                             AttsList.Add(new Employee(
-                               dr.Field<int>("EmpID"),
+                               empId,
                                emp_name,
                                PuncTime.ToString("dd/MM/yyyy HH:mm"),
-                               CommonObjs.EvTypes[dr.Field<int>("EvID")]
+                               CommonObjs.EvTypes[evId]
                             ));
                         }
                     }
@@ -465,15 +552,24 @@ namespace VTACheckClock.ViewModels
 
             foreach (string str in cached_punches)
             {
-                punch_parts = str.Split(['|']);
+                try {
+                    punch_parts = str.Split(['|']);
 
-                int EmpID = int.Parse(punch_parts[0]);
-                int EvID = int.Parse(punch_parts[1]);
-                string? PuncTime = (punch_parts.Length > 2) ? CommonProcs.ParseValidDT(punch_parts[2], "yyyy/MM/dd HH:mm:ss") : null;
-                string? PuncCalc = (punch_parts.Length > 3) ? CommonProcs.ParseValidDT(punch_parts[3], "yyyy/MM/dd HH:mm:ss") : null;
+                    int EmpID = int.Parse(punch_parts[0]);
+                    int EvID = int.Parse(punch_parts[1]);
+                    string? PuncTime = (punch_parts.Length > 2) ? CommonProcs.ParseValidDT(punch_parts[2], "yyyy/MM/dd HH:mm:ss") : null;
+                    string? PuncCalc = (punch_parts.Length > 3) ? CommonProcs.ParseValidDT(punch_parts[3], "yyyy/MM/dd HH:mm:ss") : null;
 
-                //emp_punches.Rows.Add(EmpID, EvID, DateTime.Parse(punch_parts[2]), PuncCalc);
-                emp_punches.Rows.Add(EmpID, EvID, PuncTime, PuncCalc);
+                    //emp_punches.Rows.Add(EmpID, EvID, DateTime.Parse(punch_parts[2]), PuncCalc);
+                    // Check emp_punches has ERROR column
+                    if (emp_punches.Columns.Contains("ERROR")) {
+                        emp_punches.Columns.Remove("ERROR");
+                    }
+
+                    emp_punches.Rows.Add(EmpID, EvID, PuncTime, PuncCalc);
+                } catch (Exception ex) {
+                    log.Error("Error parsing cached punch: " + ex.Message);
+                }
             }
         }
 

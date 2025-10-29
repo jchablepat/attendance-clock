@@ -4,10 +4,12 @@ using Microsoft.AspNetCore.SignalR.Client;
 using NLog;
 using System;
 using System.Collections.Concurrent;
+using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
 using VTACheckClock.Models;
 using VTACheckClock.Services.Auth;
+using VTACheckClock.Services.Libs;
 
 
 namespace VTACheckClock.Services
@@ -18,6 +20,7 @@ namespace VTACheckClock.Services
         private HubConnection? _hubConnection;
         private readonly string? _deviceId;
         private readonly ConcurrentQueue<PunchRecord> _pendingMessages = new();
+        private readonly ConcurrentQueue<AdminErrorAlert> _pendingAdminAlerts = new();
         private readonly MainSettings? _mainSettings;
         private readonly ClockSettings? _clockSettings;
 
@@ -61,7 +64,7 @@ namespace VTACheckClock.Services
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "Error obteniendo el token de acceso");
+                _log.Error(ex, "Error obteniendo el token de acceso para conectarse al servidor SignalR");
                 throw;
             }
         }
@@ -70,6 +73,13 @@ namespace VTACheckClock.Services
         {
             try
             {
+                // Check network connection
+                if (GlobalVars.BeOffline)
+                {
+                    _log.Warn("No internet connection available. SignalR client will not be initialized.");
+                    return;
+                }
+
                 if (_mainSettings.Websocket_enabled && !_mainSettings.UsePusher && !string.IsNullOrEmpty(_mainSettings.SignalRHubUrl) && !string.IsNullOrEmpty(_mainSettings.SignalRMethodName))
                 {
                     string hubUrl = $"{_mainSettings.SignalRHubUrl}/{_mainSettings.SignalRHubName}";
@@ -83,7 +93,9 @@ namespace VTACheckClock.Services
                             TimeSpan.FromSeconds(0), 
                             TimeSpan.FromSeconds(2), 
                             TimeSpan.FromSeconds(5), 
-                            TimeSpan.FromSeconds(30)
+                            TimeSpan.FromSeconds(30),
+                            TimeSpan.FromMinutes(30),
+                            TimeSpan.FromHours(1)
                         ])
                         .Build();
 
@@ -95,12 +107,12 @@ namespace VTACheckClock.Services
                 }
                 else
                 {
-                    _log.Warn("No se puede conectar al servidor SignalR, la configuraci�n no es v�lida.");
+                    _log.Warn("Invalid SignalR configuration, skipping initialization.");
                 }
             }
-            catch
+            catch(Exception ex)
             {
-                _log.Warn("Error initializing SignalR connection.");
+                _log.Error(ex, "Error initializing SignalR connection.");
                 throw;
             }
         }
@@ -112,6 +124,7 @@ namespace VTACheckClock.Services
             _hubConnection!.Reconnecting += error =>
             {
                 _log.Warn($"Attempting to reconnect: {error?.Message}");
+                // Notificar estado de reconexión
                 ConnectionStateChanged?.Invoke(this, HubConnectionState.Reconnecting);
                 return Task.CompletedTask;
             };
@@ -120,10 +133,11 @@ namespace VTACheckClock.Services
             {
                 var timeSinceLastConnection = DateTime.Now - LastConnection;
                 _log.Info($"Reconnected with connection ID: {connectionId}. Time since last connection: {timeSinceLastConnection.TotalMinutes:F2} minutes");
-
+                // Notificar estado de reconexión exitosa
                 ConnectionStateChanged?.Invoke(this, HubConnectionState.Connected);
                 await RegisterDevice();
                 await ProcessPendingMessages();
+                await ProcessPendingAdminAlerts();
 
                 LastConnection = DateTime.Now;
             };
@@ -131,6 +145,7 @@ namespace VTACheckClock.Services
             _hubConnection.Closed += error =>
             {
                 _log.Warn($"Connection closed: {error?.Message}");
+                // Notificar estado de desconexión
                 ConnectionStateChanged?.Invoke(this, HubConnectionState.Disconnected);
                 return Task.CompletedTask;
             };
@@ -168,7 +183,7 @@ namespace VTACheckClock.Services
             }
             catch (Exception ex)
             {
-                _log.Warn("Error connecting to SignalR hub: " + ex.Message);
+                _log.Error(ex, "Error connecting to SignalR hub.");
                 throw;
             }
         }
@@ -179,12 +194,12 @@ namespace VTACheckClock.Services
             {
                 await _hubConnection!.InvokeAsync("RegisterDevice", _deviceId, _clockSettings.clock_office.ToString());
                 _log.Info($"Device registered: {_deviceId}");
-
+                // Notificar estado de conexión exitosa
                 ConnectionStateChanged?.Invoke(this, HubConnectionState.Connected);
             }
             catch (HubException ex)
             {
-                _log.Error(ex, "Error espec�fico del hub al registrar el dispositivo");
+                _log.Error(ex, "Error específico del hub al registrar el dispositivo");
                 //throw;
             }
             catch (Exception ex)
@@ -219,24 +234,24 @@ namespace VTACheckClock.Services
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(ex, "Error sending punch");
+                    _log.Error(ex, "Error sending SignalR punch.");
                     _pendingMessages.Enqueue(punch);
                 }
             }
             else
             {
-                _log.Warn("Connection not available, queueing message");
+                _log.Warn("SignalR Connection not available, queueing message to send later.");
                 _pendingMessages.Enqueue(punch);
             }
         }
 
         /// <summary>
-        /// Reenv�a los mensajes en cola, cuando la conexi�n se restablece.
+        /// Reenvía los mensajes en cola, cuando la conexión se restablece.
         /// <para>1. Introduce un contador de reintentos para evitar el ciclo infinito</para>
         /// <para>2. Utiliza una cola temporal para manejar los mensajes durante los reintentos</para>
         /// <para>3. Agrega un delay entre reintentos para no saturar el sistema</para>
         /// <para>4. Mejora los mensajes de log para mostrar el progreso</para>
-        /// <para>5. Si se alcanza el m�ximo de reintentos, devuelve los mensajes a la cola principal para intentarlo en la pr�xima reconexi�n</para>
+        /// <para>5. Si se alcanza el máximo de reintentos, devuelve los mensajes a la cola principal para intentarlo en la próxima reconexión</para>
         /// </summary>
         /// <returns></returns>
         private async Task ProcessPendingMessages()
@@ -245,6 +260,7 @@ namespace VTACheckClock.Services
             int currentRetry = 0;
             var tempQueue = new ConcurrentQueue<PunchRecord>();
 
+            // El ciclo continúa hasta que no queden mensajes pendientes o se alcance el límite de reintentos
             while (_pendingMessages.TryDequeue(out PunchRecord? punch))
             {
                 if (_hubConnection?.State != HubConnectionState.Connected)
@@ -275,6 +291,67 @@ namespace VTACheckClock.Services
             }
         }
 
+        public async Task SendAdminAlertAsync(AdminErrorAlert alert)
+        {
+            var methodName = _mainSettings!.SignalRAdminMethodName;
+            if (string.IsNullOrEmpty(methodName))
+            {
+                //_log.Warn("SignalRAdminMethodName is not configured, cannot send admin alert.");
+                return;
+            }
+
+            if (_hubConnection?.State == HubConnectionState.Connected)
+            {
+                try
+                {
+                    await _hubConnection!.InvokeAsync(methodName!, _deviceId, alert);
+                    _log.Info($"Admin alert sent: {alert.Title} - {alert.Severity}");
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Error sending admin alert over SignalR, queueing alert.");
+                    _pendingAdminAlerts.Enqueue(alert);
+                }
+            }
+            else
+            {
+                _log.Warn("SignalR connection not available, queueing admin alert on next reconnection.");
+                _pendingAdminAlerts.Enqueue(alert);
+            }
+        }
+
+        private async Task ProcessPendingAdminAlerts()
+        {
+            const int maxRetries = 3;
+            int currentRetry = 0;
+            var tempQueue = new ConcurrentQueue<AdminErrorAlert>();
+
+            while (_pendingAdminAlerts.TryDequeue(out AdminErrorAlert? alert))
+            {
+                if (_hubConnection?.State != HubConnectionState.Connected)
+                {
+                    tempQueue.Enqueue(alert);
+                    _log.Warn($"Admin alerts retry {currentRetry + 1}/{maxRetries}: SignalR connection unavailable, storing alert...");
+
+                    currentRetry++;
+                    if (currentRetry >= maxRetries)
+                    {
+                        _log.Error("Max retries reached for admin alerts. Alerts will remain pending until next reconnection.");
+                        while (tempQueue.TryDequeue(out AdminErrorAlert? temp))
+                        {
+                            _pendingAdminAlerts.Enqueue(temp);
+                        }
+                        break;
+                    }
+
+                    await Task.Delay(5000);
+                    continue;
+                }
+
+                await SendAdminAlertAsync(alert);
+            }
+        }
+
         public async Task DisconnectAsync()
         {
             if (_hubConnection != null)
@@ -285,7 +362,11 @@ namespace VTACheckClock.Services
             }
         }
 
-        public async ValueTask DisposeAsync() => await DisconnectAsync();
+        public async ValueTask DisposeAsync()
+        {
+            await DisconnectAsync();
+            GC.SuppressFinalize(this);
+        }
 
         public async Task ReloadConnectionAsync()
         {

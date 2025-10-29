@@ -1,4 +1,4 @@
-﻿using Avalonia.Threading;
+using Avalonia.Threading;
 using Newtonsoft.Json;
 using NLog;
 using PusherClient;
@@ -39,6 +39,7 @@ namespace VTACheckClock.Services
         /// Cola de mensajes pendientes por enviar.
         /// </summary>
         private readonly ConcurrentQueue<PunchRecord> PendingMessages = new();
+        private readonly ConcurrentQueue<AdminErrorAlert> PendingAdminAlerts = new();
 
         public WSClient()
         {
@@ -387,6 +388,7 @@ namespace VTACheckClock.Services
             const int maxRetries = 3; // Número máximo de reintentos
             int currentRetry = 0;
             var tempQueue = new ConcurrentQueue<PunchRecord>();
+            var tempAdminQueue = new ConcurrentQueue<AdminErrorAlert>();
 
             while (PendingMessages.TryDequeue(out PunchRecord? pendingPunch)) {
                 if (!IsPusherConnected())
@@ -415,6 +417,33 @@ namespace VTACheckClock.Services
                 
                 await SendMessageAsync(pendingPunch);
             }
+
+            // Procesar Admin Alerts pendientes
+            currentRetry = 0;
+            while (PendingAdminAlerts.TryDequeue(out AdminErrorAlert? pendingAlert))
+            {
+                if (!IsPusherConnected())
+                {
+                    tempAdminQueue.Enqueue(pendingAlert);
+                    log.Warn($"Reintento admin alerts {currentRetry + 1}/{maxRetries}: Conexión no disponible, almacenando alerta...");
+
+                    currentRetry++;
+                    if (currentRetry >= maxRetries)
+                    {
+                        log.Error("Se alcanzó el límite máximo de reintentos para admin alerts. Quedarán pendientes.");
+                        while (tempAdminQueue.TryDequeue(out AdminErrorAlert? temp))
+                        {
+                            PendingAdminAlerts.Enqueue(temp);
+                        }
+                        break;
+                    }
+
+                    await Task.Delay(5000);
+                    continue;
+                }
+
+                await SendAdminAlertAsync(pendingAlert);
+            }
         }
 
         /// <summary>
@@ -437,6 +466,35 @@ namespace VTACheckClock.Services
             } else {
                 log.Warn("Conexión no disponible, almacenando mensaje...");
                 PendingMessages.Enqueue(punch);
+            }
+        }
+
+        public void StoreAdminAlert(AdminErrorAlert alert)
+        {
+            PendingAdminAlerts.Enqueue(alert);
+            _ = SendAdminAlertAsync(alert); // fire-and-forget: intentará enviar si hay conexión
+        }
+
+        private async Task SendAdminAlertAsync(AdminErrorAlert alert)
+        {
+            if (IsPusherConnected())
+            {
+                try
+                {
+                    string channel = $"checkclock-admin"; // canal administrativo global (puede filtrarse por office en payload)
+                    string eventName = m_settings?.Event_name ?? "admin-alert"; // reutilizamos Event_name si existe otro método
+                    await _WSServer.TriggerEventAsync(channel, eventName, alert);
+                }
+                catch (Exception ex)
+                {
+                    log.Warn("Error enviando admin alert: " + ex.Message);
+                    PendingAdminAlerts.Enqueue(alert);
+                }
+            }
+            else
+            {
+                log.Warn("Conexión no disponible, almacenando admin alert...");
+                PendingAdminAlerts.Enqueue(alert);
             }
         }
 

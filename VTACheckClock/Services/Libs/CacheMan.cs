@@ -1,4 +1,4 @@
-﻿using NLog;
+using NLog;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -30,10 +30,10 @@ namespace VTACheckClock.Services.Libs
         private CacheType _file_type;
         private readonly string _file_uuid;
 
-        public int file_offid { get; set; }
-        public DateTime file_time { get; set; }
-        public FileInfo? file_info { get; set; }
-        public string file_uuid { get => _file_uuid; }
+        public int FileOffid { get; set; }
+        public DateTime FileTime { get; set; }
+        public FileInfo? FileInfo { get; set; }
+        public string FileUuid { get => _file_uuid; }
 
         public CacheType FileType
         {
@@ -171,7 +171,8 @@ namespace VTACheckClock.Services.Libs
                 previousPunchesSubdir = Directory.CreateDirectory(GlobalVars.DefWorkPath);
 
                 return true;
-            } catch {
+            } catch(Exception ex) {
+                log.Warn("InitCacheFolders error: " + ex.Message);
                 return false;
             }
         }
@@ -327,7 +328,7 @@ namespace VTACheckClock.Services.Libs
                     }
 
                     f_data = CreateFileHeader(f_info, CacheType.Punches, out string f_header);
-                    File.WriteAllLines(f_data.file_info.FullName, [FixedFileHeader + CommonProcs.EnDeCapsulateTxt(f_header, true)]);
+                    File.WriteAllLines(f_data.FileInfo.FullName, [FixedFileHeader + CommonProcs.EnDeCapsulateTxt(f_header, true)]);
                     CopyPunches(OldCachedPunches, f_data, true);
                     old_punches = f_data;
                     OldCachedPunches = null;
@@ -362,8 +363,8 @@ namespace VTACheckClock.Services.Libs
 
                 foreach (CacheFileData src_file in source_files)
                 {
-                    File.AppendAllLines(dest_file.file_info.FullName, File.ReadLines(src_file.file_info.FullName).Skip(1));
-                    if (del_after) File.Delete(src_file.file_info.FullName);
+                    File.AppendAllLines(dest_file.FileInfo.FullName, File.ReadLines(src_file.FileInfo.FullName).Skip(1));
+                    if (del_after) File.Delete(src_file.FileInfo.FullName);
                 }
 
                 return true;
@@ -414,7 +415,7 @@ namespace VTACheckClock.Services.Libs
 
                 foreach (CacheFileData elfile_data in files_data)
                 {
-                    files_table.Rows.Add((int)elfile_data.FileType, elfile_data.file_uuid, elfile_data.file_time.ToString("yyyyMMddHHmmss"), elfile_data.file_info.FullName);
+                    files_table.Rows.Add((int)elfile_data.FileType, elfile_data.FileUuid, elfile_data.FileTime.ToString("yyyyMMddHHmmss"), elfile_data.FileInfo.FullName);
                 }
 
                 int[] los_types = [(int)CacheType.Notices, (int)CacheType.Employees, (int)CacheType.History];
@@ -564,7 +565,7 @@ namespace VTACheckClock.Services.Libs
                 }
 
                 file_data = CreateFileHeader(file_info, cache_type, out string header_line);
-                File.WriteAllLines(file_data.file_info.FullName, [(FixedFileHeader + CommonProcs.EnDeCapsulateTxt(header_line, true))]);
+                File.WriteAllLines(file_data.FileInfo.FullName, [(FixedFileHeader + CommonProcs.EnDeCapsulateTxt(header_line, true))]);
 
                 return true;
             } catch(Exception ex) {
@@ -591,9 +592,9 @@ namespace VTACheckClock.Services.Libs
 
             return new CacheFileData
             {
-                file_offid = off_id,
-                file_time = filetime,
-                file_info = el_file,
+                FileOffid = off_id,
+                FileTime = filetime,
+                FileInfo = el_file,
                 FileType = cache_type
             };
         }
@@ -636,10 +637,10 @@ namespace VTACheckClock.Services.Libs
                 }
 
                 return new CacheFileData {
-                    file_offid = offid,
+                    FileOffid = offid,
                     FileType = (CacheType)cachetype,
-                    file_info = el_file,
-                    file_time = timestamp
+                    FileInfo = el_file,
+                    FileTime = timestamp
                 };
             } catch(Exception ex) {
                 log.Warn("ParseFileHeader error: " + ex.Message);
@@ -662,20 +663,20 @@ namespace VTACheckClock.Services.Libs
 
                 switch (cache_source) {
                     case 2:
-                        new_punches = [.. File.ReadLines(PunchesFile.file_info.FullName).Skip(1)];
-                        old_punches = (OldPunches != null) ? [.. File.ReadLines(OldPunches.file_info.FullName).Skip(1)] : old_punches;
+                        new_punches = [.. File.ReadLines(PunchesFile.FileInfo.FullName).Skip(1)];
+                        old_punches = (OldPunches != null) ? [.. File.ReadLines(OldPunches.FileInfo.FullName).Skip(1)] : old_punches;
                         break;
 
                     case 1:
-                        old_punches = (OldPunches != null) ? [.. File.ReadLines(OldPunches.file_info.FullName).Skip(1)] : old_punches;
+                        old_punches = (OldPunches != null) ? [.. File.ReadLines(OldPunches.FileInfo.FullName).Skip(1)] : old_punches;
                         break;
 
                     case 0:
-                        new_punches = [.. File.ReadLines(PunchesFile.file_info.FullName).Skip(1)];
+                        new_punches = [.. File.ReadLines(PunchesFile.FileInfo.FullName).Skip(1)];
                         break;
 
                     default:
-                        new_punches = [.. File.ReadLines(PunchesFile.file_info.FullName).Skip(1)];
+                        new_punches = [.. File.ReadLines(PunchesFile.FileInfo.FullName).Skip(1)];
                         break;
                 }
 
@@ -721,11 +722,11 @@ namespace VTACheckClock.Services.Libs
                     la_punch.Punchtime.ToString("yyyy/MM/dd HH:mm:ss") + "|" + 
                     la_punch.Punchinternaltime.ToString("yyyy/MM/dd HH:mm:ss");
 
-                File.AppendAllLines(PunchesFile.file_info.FullName, [CommonProcs.EnDeCapsulateTxt(la_punchline, true) ?? ""]);
+                File.AppendAllLines(PunchesFile.FileInfo.FullName, [CommonProcs.EnDeCapsulateTxt(la_punchline, true) ?? ""]);
 
                 return true;
             } catch(Exception ex) {
-                log.Warn("Error al agregar el registro en la Cache: " + ex.Message);
+                log.Error(ex, "Error al agregar el registro en la Cache.");
                 return false;
             }
         }
@@ -748,13 +749,13 @@ namespace VTACheckClock.Services.Libs
                     case 2:
                         if (OldPunches != null)
                         {
-                            old_punches_file = CreateFileHeader(OldPunches.file_info, CacheType.Punches, out oldp_header);
-                            File.WriteAllLines(old_punches_file.file_info.FullName, ([(FixedFileHeader + CommonProcs.EnDeCapsulateTxt(oldp_header, true))]));
+                            old_punches_file = CreateFileHeader(OldPunches.FileInfo, CacheType.Punches, out oldp_header);
+                            File.WriteAllLines(old_punches_file.FileInfo.FullName, ([(FixedFileHeader + CommonProcs.EnDeCapsulateTxt(oldp_header, true))]));
                             old_punches = old_punches_file;
                         }
 
-                        new_punches_file = CreateFileHeader(PunchesFile.file_info, CacheType.Punches, out newp_header);
-                        File.WriteAllLines(new_punches_file.file_info.FullName, ([(FixedFileHeader + CommonProcs.EnDeCapsulateTxt(newp_header, true))]));
+                        new_punches_file = CreateFileHeader(PunchesFile.FileInfo, CacheType.Punches, out newp_header);
+                        File.WriteAllLines(new_punches_file.FileInfo.FullName, ([(FixedFileHeader + CommonProcs.EnDeCapsulateTxt(newp_header, true))]));
                         punches_file = new_punches_file;
 
                         break;
@@ -763,23 +764,23 @@ namespace VTACheckClock.Services.Libs
 
                         if (OldPunches != null)
                         {
-                            old_punches_file = CreateFileHeader(OldPunches.file_info, CacheType.Punches, out oldp_header);
-                            File.WriteAllLines(old_punches_file.file_info.FullName, ([(FixedFileHeader + CommonProcs.EnDeCapsulateTxt(oldp_header, true))]));
+                            old_punches_file = CreateFileHeader(OldPunches.FileInfo, CacheType.Punches, out oldp_header);
+                            File.WriteAllLines(old_punches_file.FileInfo.FullName, ([(FixedFileHeader + CommonProcs.EnDeCapsulateTxt(oldp_header, true))]));
                             old_punches = old_punches_file;
                         }
 
                         break;
 
                     case 0:
-                        new_punches_file = CreateFileHeader(PunchesFile.file_info, CacheType.Punches, out newp_header);
-                        File.WriteAllLines(new_punches_file.file_info.FullName, ([(FixedFileHeader + CommonProcs.EnDeCapsulateTxt(newp_header, true))]));
+                        new_punches_file = CreateFileHeader(PunchesFile.FileInfo, CacheType.Punches, out newp_header);
+                        File.WriteAllLines(new_punches_file.FileInfo.FullName, ([(FixedFileHeader + CommonProcs.EnDeCapsulateTxt(newp_header, true))]));
                         punches_file = new_punches_file;
 
                         break;
 
                     default:
-                        new_punches_file = CreateFileHeader(PunchesFile.file_info, CacheType.Punches, out newp_header);
-                        File.WriteAllLines(new_punches_file.file_info.FullName, ([(FixedFileHeader + CommonProcs.EnDeCapsulateTxt(newp_header, true))]));
+                        new_punches_file = CreateFileHeader(PunchesFile.FileInfo, CacheType.Punches, out newp_header);
+                        File.WriteAllLines(new_punches_file.FileInfo.FullName, ([(FixedFileHeader + CommonProcs.EnDeCapsulateTxt(newp_header, true))]));
                         punches_file = new_punches_file;
 
                         break;
@@ -790,7 +791,122 @@ namespace VTACheckClock.Services.Libs
 
             catch(Exception ex)
             {
-                log.Warn("PurgeCachedPunches error: " + ex.Message);
+                log.Error(ex, "PurgeCachedPunches: Error al limpiar el caché de checadas.");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Elimina un registro específico del caché, aceptando línea plana o cifrada.
+        /// </summary>
+        /// <param name="punchLine">Puede ser la línea decapsulada ("emp|event|eventtime|internal") o la línea cifrada tal como está almacenada.</param>
+        /// <returns>True si se eliminó algún registro; False si no se encontró o ocurrió un error.</returns>
+        public bool RemoveCachedPunch(string punchLine)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(punchLine))
+                {
+                    return false;
+                }
+
+                // Determinar si la entrada está cifrada o es plana
+                string? targetPlainLine = null;
+                string? targetEncryptedLine = null;
+                string targetInternalTime = string.Empty;
+
+                if (punchLine.Contains('|'))
+                {
+                    // Parece línea plana
+                    targetPlainLine = punchLine;
+                    targetEncryptedLine = CommonProcs.EnDeCapsulateTxt(targetPlainLine, true);
+                }
+                else
+                {
+                    // Asumir línea cifrada y tratar de decapsular
+                    targetEncryptedLine = punchLine;
+                    var dec = CommonProcs.EnDeCapsulateTxt(punchLine, false);
+                    if (!string.IsNullOrWhiteSpace(dec))
+                    {
+                        targetPlainLine = dec;
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(targetPlainLine))
+                {
+                    var parts = targetPlainLine.Split('|');
+                    targetInternalTime = parts.Length > 3 ? parts[3] : string.Empty;
+                }
+
+                bool removed = false;
+
+                // Helper local para procesar un archivo de caché
+                bool ProcessFile(CacheFileData? file)
+                {
+                    if (file?.FileInfo == null || !file.FileInfo.Exists)
+                        return false;
+
+                    var lines = File.ReadAllLines(file.FileInfo.FullName).ToList();
+                    if (lines.Count == 0)
+                        return false;
+
+                    string header = lines[0];
+                    var body = lines.Skip(1).ToList();
+
+                    var kept = new List<string>(body.Count);
+                    bool localRemoved = false;
+
+                    foreach (var l in body)
+                    {
+                        // 1) Coincidencia directa cifrada
+                        if (!string.IsNullOrWhiteSpace(targetEncryptedLine) && string.Equals(l, targetEncryptedLine, StringComparison.Ordinal))
+                        {
+                            localRemoved = true;
+                            continue;
+                        }
+
+                        // 2) Coincidencia plana completa
+                        var dec = CommonProcs.EnDeCapsulateTxt(l, false) ?? string.Empty;
+                        if (!string.IsNullOrWhiteSpace(targetPlainLine) && string.Equals(dec, targetPlainLine, StringComparison.Ordinal))
+                        {
+                            localRemoved = true;
+                            continue;
+                        }
+
+                        // 3) Coincidencia por hora interna
+                        var rowParts = dec.Split('|');
+                        if (rowParts.Length >= 4 && !string.IsNullOrWhiteSpace(targetInternalTime) && string.Equals(rowParts[3], targetInternalTime, StringComparison.Ordinal))
+                        {
+                            localRemoved = true;
+                            continue;
+                        }
+
+                        // Mantener la línea tal cual (ya cifrada)
+                        kept.Add(l);
+                    }
+
+                    if (localRemoved)
+                    {
+                        removed = true;
+                        var outLines = new List<string>(kept.Count + 1) { header };
+                        // Las líneas del cuerpo ya están cifradas; escribir sin re-encapsular
+                        outLines.AddRange(kept);
+                        File.WriteAllLines(file.FileInfo.FullName, outLines);
+                    }
+
+                    return localRemoved;
+                }
+
+                // Procesar archivo de checadas actual
+                _ = ProcessFile(PunchesFile);
+                // Procesar archivo de checadas histórico si existe
+                _ = ProcessFile(OldPunches);
+
+                return removed;
+            }
+            catch (Exception ex)
+            {
+                log.Warn("RemoveCachedPunch error: " + ex.Message);
                 return false;
             }
         }
@@ -819,7 +935,7 @@ namespace VTACheckClock.Services.Libs
                     ii++;
                 }
 
-                File.AppendAllLines(NoticesFile.file_info.FullName, to_write);
+                File.AppendAllLines(NoticesFile.FileInfo.FullName, to_write);
 
                 return Task.FromResult(true);
             } catch {
@@ -841,7 +957,7 @@ namespace VTACheckClock.Services.Libs
                 string[] notice_parts;
                 CacheFileData? el_file = from_old ? OldNotices : NoticesFile;
 
-                foreach (string la_line in File.ReadLines(el_file?.file_info?.FullName!).Skip(1))
+                foreach (string la_line in File.ReadLines(el_file?.FileInfo?.FullName!).Skip(1))
                 {
                     el_notice = CommonProcs.EnDeCapsulateTxt(la_line, false);
                     if (el_notice != null)
@@ -900,9 +1016,9 @@ namespace VTACheckClock.Services.Libs
                 }
 
                 string fmds_header = string.Empty;
-                CacheFileData fmds_file = CreateFileHeader(EmployeesFile.file_info, CacheType.Employees, out fmds_header);
-                File.WriteAllLines(fmds_file.file_info.FullName, [FixedFileHeader + CommonProcs.EnDeCapsulateTxt(fmds_header, true)]);
-                File.AppendAllLines(fmds_file.file_info.FullName, to_write);
+                CacheFileData fmds_file = CreateFileHeader(EmployeesFile.FileInfo, CacheType.Employees, out fmds_header);
+                File.WriteAllLines(fmds_file.FileInfo.FullName, [FixedFileHeader + CommonProcs.EnDeCapsulateTxt(fmds_header, true)]);
+                File.AppendAllLines(fmds_file.FileInfo.FullName, to_write);
                 employees_file = fmds_file;
 
                 return true;
@@ -939,9 +1055,9 @@ namespace VTACheckClock.Services.Libs
                 }
 
                 string fmds_header = string.Empty;
-                CacheFileData fmds_file = CreateFileHeader(EmployeesFile.file_info, CacheType.Employees, out fmds_header);
-                File.WriteAllLines(fmds_file.file_info.FullName, [FixedFileHeader + CommonProcs.EnDeCapsulateTxt(fmds_header, true)]);
-                File.AppendAllLines(fmds_file.file_info.FullName, to_write);
+                CacheFileData fmds_file = CreateFileHeader(EmployeesFile.FileInfo, CacheType.Employees, out fmds_header);
+                File.WriteAllLines(fmds_file.FileInfo.FullName, [FixedFileHeader + CommonProcs.EnDeCapsulateTxt(fmds_header, true)]);
+                File.AppendAllLines(fmds_file.FileInfo.FullName, to_write);
                 employees_file = fmds_file;
 
                 return Task.FromResult(true);
@@ -965,7 +1081,7 @@ namespace VTACheckClock.Services.Libs
                 string[] emp_parts;
                 CacheFileData? el_file = (from_old) ? OldEmployees : EmployeesFile;
 
-                foreach (string la_line in File.ReadLines(el_file.file_info.FullName).Skip(1))
+                foreach (string la_line in File.ReadLines(el_file.FileInfo.FullName).Skip(1))
                 {
                     el_employee = CommonProcs.EnDeCapsulateTxt(la_line, false);
                     emp_parts = el_employee.Split(['|']);
@@ -1019,11 +1135,11 @@ namespace VTACheckClock.Services.Libs
                 }
 
                 string hist_header = string.Empty;
-                CacheFileData hist_file = CreateFileHeader(HistoryFile.file_info, CacheType.History, out hist_header);
+                CacheFileData hist_file = CreateFileHeader(HistoryFile.FileInfo, CacheType.History, out hist_header);
                 //Sobreescribe el contenido del archivo y escribe la primera linea del Encabezado.
-                File.WriteAllLines(hist_file.file_info.FullName, [(FixedFileHeader + CommonProcs.EnDeCapsulateTxt(hist_header, true))]);
+                File.WriteAllLines(hist_file.FileInfo.FullName, [(FixedFileHeader + CommonProcs.EnDeCapsulateTxt(hist_header, true))]);
                 //Agrega nuevas lineas de contenido al final del encabezado
-                File.AppendAllLines(hist_file.file_info.FullName, to_write);
+                File.AppendAllLines(hist_file.FileInfo.FullName, to_write);
                 history_file = hist_file;
 
                 return Task.FromResult(true);
@@ -1048,7 +1164,7 @@ namespace VTACheckClock.Services.Libs
                 string[] punch_parts;
                 CacheFileData? el_file = from_old ? OldHistory : HistoryFile;
 
-                foreach (string la_line in File.ReadLines(el_file.file_info.FullName).Skip(1))
+                foreach (string la_line in File.ReadLines(el_file.FileInfo.FullName).Skip(1))
                 {
                     punch_record = CommonProcs.EnDeCapsulateTxt(la_line, false);
                     punch_parts = punch_record.Split(['|']);

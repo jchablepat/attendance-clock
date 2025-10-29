@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
@@ -194,7 +194,7 @@ namespace VTACheckClock.Services
                 "Ws_url", "Db_server", "Db_name", "Db_user", "Db_pass", "Logo", "mailEnabled",
                 "MailServer", "MailPort", "MailUser", "MailPass", "MailRecipient",
                 "UsePusher", "SignalRHubUrl", "SignalRHubName", "SignalRMethodName", "SignalRApiKey",
-                "SeqUrl", "SeqApiKey"
+                "SignalRAdminMethodName", "SeqUrl", "SeqApiKey"
             ];
 
             foreach (PropertyInfo la_prop in las_props)

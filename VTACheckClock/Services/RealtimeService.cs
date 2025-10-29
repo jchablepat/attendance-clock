@@ -100,5 +100,25 @@ namespace VTACheckClock.Services
                 _log.Error(ex, "Error enviando punch desde RealtimeService");
             }
         }
+
+        public async Task SendAdminAlertAsync(AdminErrorAlert alert)
+        {
+            try
+            {
+                if (_mainSettings.UsePusher)
+                {
+                    _wsClient ??= new WSClient();
+                    _wsClient.StoreAdminAlert(alert);
+                }
+                else
+                {
+                    await _signalRClient.SendAdminAlertAsync(alert);
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error enviando admin alert desde RealtimeService");
+            }
+        }
     }
 }

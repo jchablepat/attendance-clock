@@ -54,6 +54,7 @@ namespace VTACheckClock.ViewModels
         public TextBox? txtSignalRHubUrl { get; set; }
         public TextBox? txtSignalRHubName { get; set; }
         public TextBox? txtSignalRMethodName { get; set; }
+        public TextBox? txtSignalRAdminMethodName { get; set; }
         public TextBox? txtSeqUrl { get; set; }
         public TextBox? txtSeqApiKey { get; set; }
 
@@ -440,6 +441,17 @@ namespace VTACheckClock.ViewModels
             }
         }
 
+        private string _signalRAdminMethodName = "";
+        public string SignalRAdminMethodName
+        {
+            get => _signalRAdminMethodName;
+            set
+            {
+                // optional admin method; allow empty when SignalR is enabled
+                this.RaiseAndSetIfChanged(ref _signalRAdminMethodName, value ?? string.Empty);
+            }
+        }
+
         private string _signalRApiKey = "";
         public string SignalRApiKey
         {
@@ -551,6 +563,7 @@ namespace VTACheckClock.ViewModels
                 SignalRHubUrl = m_settings.SignalRHubUrl ?? string.Empty;
                 SignalRHubName = m_settings.SignalRHubName ?? string.Empty;
                 SignalRMethodName = m_settings.SignalRMethodName ?? string.Empty;
+                SignalRAdminMethodName = m_settings.SignalRAdminMethodName ?? string.Empty;
                 SignalRApiKey = m_settings.SignalRApiKey ?? string.Empty;
                 SeqUrl = m_settings.SeqUrl ?? string.Empty;
                 SeqApiKey = m_settings.SeqApiKey ?? string.Empty;
@@ -816,6 +829,7 @@ namespace VTACheckClock.ViewModels
                 SignalRHubUrl = SignalRHubUrl,
                 SignalRHubName = SignalRHubName,
                 SignalRMethodName = SignalRMethodName,
+                SignalRAdminMethodName = SignalRAdminMethodName,
                 SeqUrl = SeqUrl,
                 SeqApiKey = SeqApiKey
             };

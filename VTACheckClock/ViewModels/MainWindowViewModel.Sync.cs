@@ -49,7 +49,7 @@ namespace VTACheckClock.ViewModels
                             return Task.FromResult(true);
                         } else {
                             SyncError = "El servidor ha reportado un problema al procesar los registros de asistencia. Favor de comunicarse con el administrador del sistema.";
-                            log.Warn("El servidor ha reportado un problema al procesar los registros de asistencia.");
+                            log.Warn("El servidor ha reportado un problema al procesar los registros de asistencia. Continuando en modo offline.");
 
                             return Task.FromResult(false);
                         }
@@ -227,6 +227,7 @@ namespace VTACheckClock.ViewModels
             }
             catch (Exception ex)
             {
+                log.Error(ex, "Ocurrió un error durante la sincronización.");
                 SyncError = "Ocurrió un error no especificado durante la sincronización. Favor de contactar al administrador del sistema. " + ex.Message;
                 HideLoader();
                 upload_result = false;

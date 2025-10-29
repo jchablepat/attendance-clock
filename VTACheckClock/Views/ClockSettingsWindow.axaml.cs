@@ -51,6 +51,7 @@ namespace VTACheckClock.Views
                 ((ClockSettingsViewModel?)DataContext).txtSignalRHubUrl = txtSignalRHubUrl;
                 ((ClockSettingsViewModel?)DataContext).txtSignalRHubName = txtSignalRHubName;
                 ((ClockSettingsViewModel?)DataContext).txtSignalRMethodName = txtSignalRMethodName;
+                ((ClockSettingsViewModel?)DataContext).txtSignalRAdminMethodName = txtSignalRAdminMethodName;
             };
 
             WindowHelper.CenterOnScreen(this);
@@ -62,17 +63,17 @@ namespace VTACheckClock.Views
         {
             var screens = Screens.All;
 
-            // Verifica si hay más de una pantalla
+            // Verifica si hay mÃ¡s de una pantalla
             if (screens.Count > 1)
             {
                 // Obtiene la segunda pantalla
                 var secondScreen = screens.ElementAt(1);
 
-                // Calcula la posición para centrar en la segunda pantalla
+                // Calcula la posiciÃ³n para centrar en la segunda pantalla
                 double left = secondScreen.Bounds.X + (secondScreen.Bounds.Width - this.Width) / 2;
                 double top = secondScreen.Bounds.Y + (secondScreen.Bounds.Height - this.Height) / 2;
 
-                // Establece la posición de la ventana
+                // Establece la posiciÃ³n de la ventana
                 this.Position = new PixelPoint((int)left, (int)top);
             }
             else
@@ -97,17 +98,17 @@ namespace VTACheckClock.Views
 
         private static void OnTextInput(object? sender, KeyEventArgs e)
         {
-            // Verificar si la tecla presionada es numérica
+            // Verificar si la tecla presionada es numÃ©rica
             if (!IsNumericKey(e.Key))
             {
-                // Si la tecla presionada no es numérica, cancelar el evento
+                // Si la tecla presionada no es numÃ©rica, cancelar el evento
                 e.Handled = true;
             }
         }
 
         private static bool IsNumericKey(Key key)
         {
-            // Verificar si la tecla presionada es numérica
+            // Verificar si la tecla presionada es numÃ©rica
             return key >= Key.D0 && key <= Key.D9 || key >= Key.NumPad0 && key <= Key.NumPad9;
         }
 

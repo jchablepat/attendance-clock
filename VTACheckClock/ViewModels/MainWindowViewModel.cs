@@ -71,11 +71,13 @@ namespace VTACheckClock.ViewModels
         public Interaction<PwdPunchViewModel, int> ShowPwdPunchDialog { get; } = new();
         public Interaction<WebsocketLoggerViewModel, bool> ShowLoggerDialog { get; } = new();
         public Interaction<AttendanceViewModel, bool> ShowAttendanceRptDialog { get; } = new();
+        public Interaction<PunchSyncPreviewViewModel, bool> ShowPunchesPreviewDialog { get; } = new();
         public Interaction<LoginViewModel, bool> ShowLoginDialog { get; } = new();
         public ICommand? LoginCommand { get; }
         public ICommand? LogOutCommand { get; }
         public ICommand? PreviewLoggerCommand { get; }
         public ICommand? PreviewAttendanceReportCommand { get; }
+        public ICommand? PreviewPunchSyncCommand { get; }
         public ICommand? SyncEvtCommand { get; }
 
         public ICommand? TestCommand { get; }
@@ -343,6 +345,15 @@ namespace VTACheckClock.ViewModels
             PreviewAttendanceReportCommand = ReactiveCommand.CreateFromTask(async () => {
                 var vmAtteRptViewModel = new AttendanceViewModel();
                 await ShowAttendanceRptDialog.Handle(vmAtteRptViewModel);
+            });
+
+            PreviewPunchSyncCommand = ReactiveCommand.CreateFromTask(async () => {
+                // Requiere autenticación de administrador similar a ClockSettings
+                if (CommonValids.InvokeLogin(GlobalVars.AdminSetPriv))
+                {
+                    var vm = new PunchSyncPreviewViewModel();
+                    await ShowPunchesPreviewDialog.Handle(vm);
+                }
             });
 
             //SyncEvtCommand = ReactiveCommand.CreateFromTask(InvokeManualSync(false));
@@ -734,18 +745,18 @@ namespace VTACheckClock.ViewModels
                 UrUClass.LoadCurrentReader();
 
                 if (!UrUClass.OpenReader()) {
-                    //KillMe("No se pudo inicializar el Lector de Huellas.");
+                    KillMe("No se pudo inicializar el Lector de Huellas.");
                 }
 
                 if (!UrUClass.StartCaptureAsync(OnCaptured))
                 {
-                    //KillMe("El manejador de evento del Lector de Huella no se puedo asociar.");
+                    KillMe("El manejador de evento del Lector de Huella no se puedo asociar.");
                 }
             } catch(Exception ex) {
                 Dispatcher.UIThread.InvokeAsync(async () => {
                     log.Warn("Error general del Lector de Huellas ==> " + ex.Message);
                     await Show(null, "Lector no encontrado", "No se ha encontrado ningún lector de huella dactilar o no se ha podido tener acceso al mismo.\n\nPruebe una de las siguientes opciones:\n\n1. Rectifique que el lector se encuentra debidamente conectado al equipo; deberá ver una luz azul en el lector que así lo indica.\n2. Asegúrese que los controladores necesarios han sido correctamente instalados.\n3. Conecte y desconecte el lector o conéctelo a un puerto USB diferente.\n4. Reinicie el equipo.\n\nSi el problema persiste, póngase en contacto con el administrador del sistema.\n\nLa aplicación terminará ahora.", MessageBoxButtons.Ok);
-                    //KillMe("Error general del Lector de Huellas ==> " + ex.Message);
+                    KillMe("Error general del Lector de Huellas ==> " + ex.Message);
                 });
             }
         }

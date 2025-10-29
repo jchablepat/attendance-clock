@@ -12,6 +12,7 @@ namespace VTACheckClock.Services
         Task InitializeAsync();
         Task ReloadAsync();
         Task SendMessageAsync(PunchLine new_punch, FMDItem? emp = null);
+        Task SendAdminAlertAsync(AdminErrorAlert alert);
         bool IsConnected { get; }
     }
 }

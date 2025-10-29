@@ -340,7 +340,8 @@ namespace VTACheckClock.Services
                 la_calcdate = NewDateTimeParse(in_str);
 
                 return ((la_calcdate != DateTime.MinValue) || accept_min) ? la_calcdate.ToString(form_str) : inval_val;
-            } catch {
+            } catch(Exception ex) {
+                log.Error(ex, "Error al convertir la cadena '" + in_str + "' a DateTime.");
                 return accept_min ? la_calcdate.ToString() : inval_val;
             }
         }
@@ -644,14 +645,14 @@ namespace VTACheckClock.Services
                     if(pdata[1] != "0") {
                         punc_data.Rows.Add(int.Parse(pdata[0]), int.Parse(pdata[1]), client_time, calc_time);
                     } else {
-                        log.Warn("Error al procesar el evento '" + pdata[1] + "' del empleado '" + pdata[0] + "' en el horario '"+ client_time + "'");
+                        log.Error("Error al procesar el evento '" + pdata[1] + "' del empleado '" + pdata[0] + "' en el horario '"+ client_time + "'");
                     }
                 }
 
                 DataTable dt = DBMethods.WritePunches(la_office, punc_data);
                 bool IsSuccessResult = dt.Rows[0]["ErrMess"].ToString() == "None";
 
-                if(!IsSuccessResult) log.Info($"Ocurrió el siguiente error al sincronizar las checadas: {dt.Rows[0]["ErrMess"]}");
+                if(!IsSuccessResult) log.Error($"Ocurrió el siguiente error al sincronizar las checadas: {dt.Rows[0]["ErrMess"]}");
                 return IsSuccessResult;
             }
 
