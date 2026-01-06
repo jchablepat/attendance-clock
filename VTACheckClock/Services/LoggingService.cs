@@ -1,6 +1,7 @@
 using NLog;
 using NLog.Config;
 using NLog.Targets;
+using NLog.Targets.Wrappers;
 using NLog.Targets.Seq;
 using VTACheckClock.Models;
 
@@ -41,6 +42,14 @@ namespace VTACheckClock.Services
                 MaxArchiveFiles = 20,
                 Encoding = System.Text.Encoding.UTF8,
                 Header = $"=== Logs de {officeInfo?.Offname} (ID: {clockSettings.clock_office}) ==="
+            };
+
+            // Envolver el target de archivo para que la escritura sea asíncrona (segundo plano)
+            var asyncFileTarget = new AsyncTargetWrapper(fileTarget)
+            {
+                Name = "asyncFileTarget",
+                QueueLimit = 5000,
+                OverflowAction = AsyncTargetWrapperOverflowAction.Discard
             };
 
             string? seqUrl = settings?.SeqUrl;
@@ -89,10 +98,18 @@ namespace VTACheckClock.Services
                     },
                 };
 
-                config.AddTarget(seqTarget);
+                // Envolver SeqTarget en AsyncTargetWrapper para envío en segundo plano
+                var asyncSeqTarget = new AsyncTargetWrapper(seqTarget)
+                {
+                    Name = "seq_async",
+                    QueueLimit = 1000,
+                    OverflowAction = AsyncTargetWrapperOverflowAction.Discard
+                };
+
+                config.AddTarget(asyncSeqTarget);
 
                 // Enviar todos los logs, puedes ajustar niveles si lo deseas
-                config.AddRule(LogLevel.Info, LogLevel.Fatal, seqTarget);
+                config.AddRule(LogLevel.Info, LogLevel.Fatal, asyncSeqTarget);
             }
 
             // ============================================
@@ -106,19 +123,19 @@ namespace VTACheckClock.Services
             // ============================================
             // TARGET 4: Admin Alerts (errores críticos)
             // ============================================
-            var adminAlertTarget = new AdminAlertNLogTarget() { Name = "admin_alerts" };
+            //var adminAlertTarget = new AdminAlertNLogTarget() { Name = "admin_alerts" };
 
             // Agregar targets a la configuración
-            config.AddTarget(fileTarget);
+            config.AddTarget(asyncFileTarget);
             config.AddTarget(consoleTarget);
-            config.AddTarget(adminAlertTarget);
+            //config.AddTarget(adminAlertTarget);
 
             // ============================================
             // REGLAS: Definir qué logs van a qué targets
             // ============================================
-            config.AddRule(LogLevel.Trace, LogLevel.Fatal, fileTarget);
-            config.AddRule(new LoggingRule("app_logger", LogLevel.Info, fileTarget));
-            config.AddRule(LogLevel.Fatal, LogLevel.Fatal, adminAlertTarget);
+            config.AddRule(LogLevel.Trace, LogLevel.Fatal, asyncFileTarget);
+            config.AddRule(new LoggingRule("app_logger", LogLevel.Info, asyncFileTarget));
+            //config.AddRule(LogLevel.Fatal, LogLevel.Fatal, adminAlertTarget);
 
             // Solo en Debug mode, mostrar en consola
             #if DEBUG

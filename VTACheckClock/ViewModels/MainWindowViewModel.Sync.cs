@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Threading;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Win32;
 using System;
 using System.Threading.Tasks;
 using VTACheckClock.Helpers;
@@ -24,52 +25,55 @@ namespace VTACheckClock.ViewModels
         private bool lastConnectionState = true;
 
         /// <summary>
-        /// Envía los registros de asistencia almacenados en caché al servidor.
+        /// Attempts to upload cached employee punch records to the server.
         /// </summary>
+        /// <remarks>If the application is in offline mode, the method will not attempt to upload punches and will return
+        /// immediately. In case of a successful upload, the cached punches are purged. If the upload fails or an exception
+        /// occurs, the method logs the error and enables a retry mechanism.</remarks>
+        /// <returns>A task that represents the asynchronous operation. The task result contains <see langword="true"/> if the punches
+        /// were successfully uploaded or if the application is offline; otherwise, <see langword="false"/>.</returns>
         private Task<bool> UploadPunches()
         {
             tmrSyncRetry.IsEnabled = false;
 
-            if (!GlobalVars.BeOffline) {
-                try {
-                    string[] from_file = GlobalVars.AppCache.GetCachedPunches(2);
-
-                    if (from_file.Length > 0) {
-                        ScantRequest la_req = new() {
-                            Question = (
-                                GlobalVars.clockSettings.clock_office.ToString() + "." +
-                                CommonProcs.ZipString(string.Join(GlobalVars.SeparAtor[0].ToString(), from_file))
-                            )
-                        };
-
-                        if (CommonProcs.SendPunches(la_req)) {
-                            GlobalVars.AppCache.PurgeCachedPunches(2);
-                            log.Info($"Se sincronizaron correctamente {from_file.Length} registro(s) de empleados.");
-
-                            return Task.FromResult(true);
-                        } else {
-                            SyncError = "El servidor ha reportado un problema al procesar los registros de asistencia. Favor de comunicarse con el administrador del sistema.";
-                            log.Warn("El servidor ha reportado un problema al procesar los registros de asistencia. Continuando en modo offline.");
-
-                            return Task.FromResult(false);
-                        }
-                    }
-                    else {
-                        return Task.FromResult(true);
-                    }
-                } catch (Exception exc) {
-                    SyncError = "Ha ocurrido un fallo al sincronizar los registros de asistencia. Favor de comunicarse con el administrador del sistema.";
-                    log.Error(exc, SyncError);
-
-                    return Task.FromResult(false);
-                } finally
-                {
-                    tmrSyncRetry.IsEnabled = true;
-                }
-            } else {
+            if (GlobalVars.BeOffline) {
                 tmrSyncRetry.IsEnabled = true;
                 return Task.FromResult(true);
             }
+
+            try {
+                string[] cache_punches = GlobalVars.AppCache.GetCachedPunches(2);
+
+                if (cache_punches.Length > 0) {
+                    ScantRequest la_req = new() {
+                        Question = (
+                            GlobalVars.clockSettings.clock_office.ToString() + "." +
+                            CommonProcs.ZipString(string.Join(GlobalVars.SeparAtor[0].ToString(), cache_punches))
+                        )
+                    };
+
+                    if (CommonProcs.SendPunches(la_req)) {
+                        GlobalVars.AppCache.PurgeCachedPunches(2);
+                        log.Info($"Se sincronizaron correctamente {cache_punches.Length} registro(s) de empleados.");
+                    }
+                    else {
+                        SyncError = "El servidor ha reportado un problema al procesar los registros de asistencia. Favor de comunicarse con el administrador del sistema.";
+                        log.Warn("El servidor ha reportado un problema al procesar los registros de asistencia. Continuando en modo offline.");
+                        tmrSyncRetry.IsEnabled = true;
+
+                        return Task.FromResult(false);
+                    }
+                }
+            } 
+            catch (Exception exc) {
+                SyncError = "Ha ocurrido un fallo al sincronizar los registros de asistencia. Favor de comunicarse con el administrador del sistema.";
+                log.Error(exc, SyncError);
+                tmrSyncRetry.IsEnabled = true;
+
+                return Task.FromResult(false);
+            }
+
+            return Task.FromResult(true);
         }
 
         /// <summary>
@@ -137,6 +141,7 @@ namespace VTACheckClock.ViewModels
         private void TmrSyncRetry_Tick(object? sender, EventArgs e)
         {
             if(!ScheduleTriggered) {
+                log.Info("Iniciando intento de sincronización de registros en caché...");
                 RetryingSync = true;
                 Dispatcher.UIThread.InvokeAsync(async () => await SyncWithLoader());
             }

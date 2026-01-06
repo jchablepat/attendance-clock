@@ -788,6 +788,7 @@ namespace VTACheckClock.ViewModels
             // Verificar la sincronización programada por cada tick
             if (CheckSyncDTime())
             {
+                log.Info("Sincronización programada iniciada.");
                 ScheduleTriggered = true;
                 Dispatcher.UIThread.InvokeAsync(async () => {
                     await SyncWithLoader();
@@ -819,6 +820,7 @@ namespace VTACheckClock.ViewModels
                 return;
             }
 
+            log.Info("Enviando correo de empleados sin checadas de entrada/salida...");
             await Task.Run(async () => {
                 await EmailSenderHandler.SendEmailAsync((!string.IsNullOrEmpty(offName) ? offName + " - ": "") + "Control de Asistencia", body);
             });
@@ -902,16 +904,27 @@ namespace VTACheckClock.ViewModels
             _cancellationTokenSource.Cancel();
             _cancellationTokenSource = new CancellationTokenSource();
 
-            try {
-                await Task.Delay(200, _cancellationTokenSource.Token);
-            } catch (TaskCanceledException) {
-                return;
+            // percepción de respuesta inmediata y evitar que el render se posponga.
+            if (la_action != 4)
+            {
+                try {
+                    await Task.Delay(200, _cancellationTokenSource.Token);
+                } catch (TaskCanceledException) {
+                    return;
+                }
             }
 
             var ui = App.ServiceProvider.GetService<UIService>() ?? new UIService();
             var (name, eventText) = ui.BuildInfoLabels(la_action, emp_num, emp_nom, la_punch);
             EmployeeName = name;
             EmployeeEvent = eventText;
+
+            // Cuando mostramos "Procesando...", pedimos al dispatcher que procese el ciclo de
+            // render de inmediato para que el usuario vea el mensaje antes de operaciones pesadas.
+            if (la_action == 4)
+            {
+                await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
+            }
         }
         #endregion
     }

@@ -115,7 +115,7 @@ namespace VTACheckClock.Services.Audit
                 // Si acabamos de conectarnos, sincronizar
                 if (currentlyOnline && !_isOnline)
                 {
-                    _log.Info("Conexión a Internet detectada, iniciando sincronización...");
+                    _log.Info("Conexión a Internet detectada, iniciando sincronización de cambios de hora pendientes...");
                     _ = Task.Run(SyncPendingChangesAsync); // Async sin await para no bloquear el timer
                 }
 
@@ -167,11 +167,11 @@ namespace VTACheckClock.Services.Audit
 
                 if (pendingChanges.Count == 0)
                 {
-                    _log.Info("No hay cambios pendientes de sincronización");
+                    _log.Info("No hay cambios de hora pendientes de sincronización");
                     return;
                 }
 
-                _log.Info($"Sincronizando {pendingChanges.Count} cambios pendientes...");
+                _log.Info($"Sincronizando {pendingChanges.Count} cambios de hora pendientes...");
 
                 int successCount = 0;
                 int errorCount = 0;

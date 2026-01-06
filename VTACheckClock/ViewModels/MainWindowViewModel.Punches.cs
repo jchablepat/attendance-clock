@@ -13,6 +13,7 @@ using VTACheckClock.Services.Libs;
 using VTACheckClock.Views;
 using static VTACheckClock.Views.MessageBox;
 using Microsoft.Extensions.DependencyInjection;
+using System.Diagnostics;
 namespace VTACheckClock.ViewModels
 {
     partial class MainWindowViewModel
@@ -30,7 +31,12 @@ namespace VTACheckClock.ViewModels
 
                 if (emp_punches == null) {
                     emp_punches = CommonObjs.VoidPunches;
-                } else {
+                }
+                else if(emp_punches.Columns.Contains("ERROR")) {
+                    log.Error("Using cached punches because of error retrieving recent punches: " + emp_punches.Rows[0]["ERROR"].ToString());
+                    emp_punches = GlobalVars.AppCache.RetrieveHistory();
+                }
+                else {
                     await GlobalVars.AppCache.SaveHistory(emp_punches);
                 }
             } else {
@@ -81,6 +87,9 @@ namespace VTACheckClock.ViewModels
                 DateTime calc_time = GlobalVars.StartTime.Add(run_time);
 
                 await UpdateInfoLabels(4); //Leyenda procesando
+                // Ceder inmediatamente el hilo de UI para que la leyenda se pinte antes de
+                // continuar con operaciones subsecuentes potencialmente costosas.
+                await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
                 SearchText = "";
 
                 // Si la huella es valida
@@ -482,6 +491,13 @@ namespace VTACheckClock.ViewModels
             string? emp_name = string.Empty;
 
             DateTime today = GetCurrentClockTime();
+
+            if(emp_punches.Columns.Count <= 1)
+            {
+                var error_dt = emp_punches.Rows[0]["ERROR"].ToString() ?? "Error desconocido al recuperar los registros de asistencia.";
+                log.Error("Error retrieving punch records: " + error_dt);
+                return;
+            }
 
             var filteredRows = emp_punches?.AsEnumerable()
             .Where(p => {

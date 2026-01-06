@@ -74,11 +74,11 @@ namespace VTACheckClock.Services
             try
             {
                 // Check network connection
-                if (GlobalVars.BeOffline)
-                {
-                    _log.Warn("No internet connection available. SignalR client will not be initialized.");
-                    return;
-                }
+                //if (GlobalVars.BeOffline)
+                //{
+                //    _log.Warn("No internet connection available. SignalR client will not be initialized.");
+                //    return;
+                //}
 
                 if (_mainSettings.Websocket_enabled && !_mainSettings.UsePusher && !string.IsNullOrEmpty(_mainSettings.SignalRHubUrl) && !string.IsNullOrEmpty(_mainSettings.SignalRMethodName))
                 {

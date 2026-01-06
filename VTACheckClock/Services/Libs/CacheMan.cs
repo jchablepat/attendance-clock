@@ -1103,18 +1103,15 @@ namespace VTACheckClock.Services.Libs
         /// <returns>True si la operación se completó con éxito. False de lo contrario.</returns>
         public Task<bool> SaveHistory(DataTable history_dt)
         {
-            if (history_dt.Rows.Count < 1) return Task.FromResult(true);
+            if (history_dt.Rows.Count <= 1) {
+                return Task.FromResult(true);
+            }
 
             string[] valid_cols = ["EmpID", "EvID", "PuncTime", "PuncCalc"];
 
-            foreach (DataColumn dc in history_dt.Columns)
+            if (history_dt.Columns.Count != valid_cols.Length || !valid_cols.All(col => history_dt.Columns.Contains(col)))
             {
-                if (!valid_cols.Contains(dc.ColumnName)) return Task.FromResult(false);
-            }
-
-            foreach (string str in valid_cols)
-            {
-                if (!history_dt.Columns.Contains(str)) return Task.FromResult(false);
+                return Task.FromResult(false);
             }
 
             try {
@@ -1179,7 +1176,7 @@ namespace VTACheckClock.Services.Libs
             }
 
             catch(Exception ex) {
-                log.Warn("RetrieveHistory error: " + ex.Message);
+                log.Warn("RetrievePunchHistory error: " + ex.Message);
                 la_resp.Rows.Clear();
             }
 
